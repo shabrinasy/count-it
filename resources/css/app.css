@@ -1,0 +1,24 @@
+.widget-container {
+    display: flex;
+    flex-direction: column; /* Menumpuk card di atas chart */
+    margin-bottom: 20px;
+}
+
+.widget-card {
+    margin-bottom: 15px; /* Jarak antara card dan chart */
+}
+
+.widget-chart {
+    margin-top: 15px; /* Jarak untuk layout yang rapi */
+}
+
+@media (min-width: 768px) {
+    .widget-container {
+        flex-direction: row; /* Berdampingan di layar yang lebih besar */
+        justify-content: space-between;
+    }
+
+    .widget-card, .widget-chart {
+        width: 48%; /* Lebar setengah untuk card dan chart */
+    }
+}
