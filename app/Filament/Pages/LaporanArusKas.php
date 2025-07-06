@@ -72,9 +72,9 @@ class LaporanArusKas extends Page
                 }
             }
 
-            // Jika akun balance-nya credit → total dijadikan negatif
+            
             if ($account->balance === 'credit') {
-                $total *= -1;
+                $total *= -1; 
             }
 
             return [
