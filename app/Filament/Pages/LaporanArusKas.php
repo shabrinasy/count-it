@@ -70,12 +70,14 @@ class LaporanArusKas extends Page
                 if ($expense->category && $expense->category->account_id == $account->id) {
                     $total -= $expense->amount_expense; // Kas berkurang
                 }
+            }      
+           
+            if ($account->balance === 'credit') {
+                $total = -abs($total);  
+            } else {
+                $total = abs($total);  
             }
 
-            
-            if ($account->balance === 'credit') {
-                $total *= -1; 
-            }
 
             return [
                 'code' => $account->code_account,
