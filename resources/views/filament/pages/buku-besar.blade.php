@@ -39,12 +39,13 @@
         </div>
         @else
         <div class="text-center mb-4 leading-snug">
-        <h2 class="text-xl font-bold tracking-wide uppercase">Buku Besar</h2>
         <p class="text-sm text-gray-700">Cafe D'Klakon</p>
-        <p class="text-sm text-gray-600">Periode: {{ \Carbon\Carbon::parse($month)->translatedFormat('F Y') }}</p>
+        <h2 class="text-xl font-bold tracking-wide uppercase">Buku Besar</h2>
+        <p class="text-sm text-gray-600">Periode {{ \Carbon\Carbon::parse($month)->translatedFormat('F Y') }}</p>
         @if ($accountId)
-            <p class="text-sm mt-1 font-medium">
-                Akun: {{ \App\Models\Account::find($accountId)?->code_account }} - {{ \App\Models\Account::find($accountId)?->name_account }}
+            <p class="text-sm mt-1 font-medium flex justify-between">
+                <span>{{ \App\Models\Account::find($accountId)?->name_account }}</span>
+                <span>{{ \App\Models\Account::find($accountId)?->code_account }}</span>
             </p>
         @endif
     </div>
@@ -56,12 +57,11 @@
                     <th rowspan="2" class="px-3 py-2 border">Transaksi</th>
                     <th rowspan="2" class="px-3 py-2 border">Nomor</th>
                     <th rowspan="2" class="px-3 py-2 border">Keterangan</th>
-                    <th colspan="2" class="px-3 py-2 border">Pergerakan</th>
-                    <th colspan="2" class="px-3 py-2 border">Saldo</th>
-                </tr>
-                <tr class="bg-gray-100 text-center font-semibold border-b">
                     <th class="px-3 py-2 border">Debit</th>
                     <th class="px-3 py-2 border">Kredit</th>
+                    <th colspan="2" class="px-3 py-2 border">Saldo</th>
+                </tr>
+                <tr class="bg-gray-100 text-center font-semibold border-b">   
                     <th class="px-3 py-2 border">Debit</th>
                     <th class="px-3 py-2 border">Kredit</th>
                 </tr>
