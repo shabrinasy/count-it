@@ -54,9 +54,9 @@
             <thead>
                 <tr class="bg-gray-100 text-center font-semibold border-b">
                     <th rowspan="2" class="px-3 py-2 border">Tanggal</th>
-                    <th rowspan="2" class="px-3 py-2 border">Transaksi</th>
-                    <th rowspan="2" class="px-3 py-2 border">Nomor</th>
                     <th rowspan="2" class="px-3 py-2 border">Keterangan</th>
+                    <th rowspan="2" class="px-3 py-2 border">Ref</th>
+                    <th rowspan="2" class="px-3 py-2 border">Kode Akun</th>
                     <th class="px-3 py-2 border">Debit</th>
                     <th class="px-3 py-2 border">Kredit</th>
                     <th colspan="2" class="px-3 py-2 border">Saldo</th>
