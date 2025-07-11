@@ -44,8 +44,8 @@
         <p class="text-sm text-gray-600">Periode {{ \Carbon\Carbon::parse($month)->translatedFormat('F Y') }}</p>
         @if ($accountId)
             <p class="text-sm mt-1 font-medium flex justify-between">
-                <span>Akun {{ \App\Models\Account::find($accountId)?->name_account }}</span>
-                <span>No. Akun {{ \App\Models\Account::find($accountId)?->code_account }}</span>
+                <span>Akun <b>{{ \App\Models\Account::find($accountId)?->name_account }}</b></span>
+                <span>No. Akun <b>{{ \App\Models\Account::find($accountId)?->code_account }}</b></span>
             </p>
         @endif
     </div>
