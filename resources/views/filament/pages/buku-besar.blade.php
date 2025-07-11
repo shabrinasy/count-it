@@ -57,6 +57,8 @@
                     <th rowspan="2" class="px-3 py-2 border">Keterangan</th>
                     <th rowspan="2" class="px-3 py-2 border">Ref</th>
                     <th rowspan="2" class="px-3 py-2 border">Kode Akun</th>
+                    <th rowspan="2" class="px-3 py-2 border">Debit</th>
+                    <th rowspan="2" class="px-3 py-2 border">Kredit</th>
                     <th colspan="2" class="px-3 py-2 border">Saldo</th>
                 </tr>
                 <tr class="bg-gray-100 text-center font-semibold border-b">   
