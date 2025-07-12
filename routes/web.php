@@ -15,5 +15,5 @@ use App\Filament\Pages\JurnalUmum;
 */
 
 Route::get('/admin', function () {
-    return view('login');
+    return ('/login');
 });
