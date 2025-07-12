@@ -14,10 +14,6 @@ use App\Filament\Pages\JurnalUmum;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
+Route::get('/admin', function () {
+    return view('login');
 });
-
-
-Route::get('/jurnal/download/pdf/{bulan}', [JurnalUmum::class, 'downloadPDF'])->name('jurnal.download.pdf');
-
