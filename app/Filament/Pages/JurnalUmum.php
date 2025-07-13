@@ -146,7 +146,9 @@ class JurnalUmum extends Page
     ->whereYear('created_at', $bulan->year)
     ->get()
     ->map(function ($item) use ($akunKas, $akunPendapatan) {
-        $total = $item->orderItem->sum('price');
+        $total = $item->orderItem->sum(function ($orderItem) {
+            return $orderItem->price * $orderItem->qty;
+        });
 
         return [
             'date' => $item->created_at,
@@ -157,6 +159,7 @@ class JurnalUmum extends Page
             ],
         ];
     });
+
 
 
     // Gabungkan semua data
