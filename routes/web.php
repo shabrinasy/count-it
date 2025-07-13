@@ -15,6 +15,6 @@ use App\Filament\Pages\JurnalUmum;
 */
 
 Route::get('/', function () {
-    return redirect('admin');
+    return redirect('/admin');
 });
 
