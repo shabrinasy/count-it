@@ -111,110 +111,123 @@ class BukuBesar extends Page
     // === TRANSAKSI BULAN INI ===
 
     // PURCHASES
-    $purchases = Purchase::with('purchaseItems')->whereBetween('date', [$start, $end])->get();
-    foreach ($purchases as $p) {
-        $total = $p->purchaseItems->sum(fn($item) => $item->quantity * $item->price);
+$purchases = Purchase::with('purchaseItems')->whereBetween('date', [$start, $end])->get();
+foreach ($purchases as $p) {
+    $total = $p->purchaseItems->sum(fn($item) => $item->quantity * $item->price);
 
-        if ($account->id == 5) {
-            $transactions->push([
-                'date' => $p->date,
-                'transaksi' => 'Pembelian',
-                'nomor' => $p->code,
-                'keterangan' => $p->notes ?? 'Pembelian bahan baku',
-                'debit' => $total,
-                'credit' => 0,
-            ]);
-        } elseif ($account->id == 3) {
-            $transactions->push([
-                'date' => $p->date,
-                'transaksi' => 'Pembelian',
-                'nomor' => $p->code,
-                'keterangan' => $p->notes ?? 'Pembelian bahan baku',
-                'debit' => 0,
-                'credit' => $total,
-            ]);
-        }
+    // Tentukan akun lawan berdasarkan akun yang dipilih
+    if ($account->id == 5) {
+        $transactions->push([
+            'date' => $p->date,
+            'transaksi' => 'Pembelian',
+            'nomor' => $p->code,
+            'keterangan' => 'Kas', // Keterangan berdasarkan akun lawan (Kas)
+            'kode_akun' => '1103', // Kode akun lawan (Kas)
+            'debit' => $total,
+            'credit' => 0,
+        ]);
+    } elseif ($account->id == 3) {
+        $transactions->push([
+            'date' => $p->date,
+            'transaksi' => 'Pembelian',
+            'nomor' => $p->code,
+            'keterangan' => 'Persediaan Bahan Baku', // Keterangan berdasarkan akun lawan (Persediaan Bahan Baku)
+            'kode_akun' => '1101', // Kode akun lawan (Persediaan Bahan Baku)
+            'debit' => 0,
+            'credit' => $total,
+        ]);
     }
+}
 
-    // ORDERS
-    $orders = Order::with('orderItem')->whereBetween('created_at', [$start, $end])->get();
-    foreach ($orders as $o) {
-        $total = $o->orderItem->sum(fn($item) => $item->quantity * $item->price);
+// ORDERS
+$orders = Order::with('orderItem')->whereBetween('created_at', [$start, $end])->get();
+foreach ($orders as $o) {
+    $total = $o->orderItem->sum(fn($item) => $item->quantity * $item->price);
 
-        if ($account->id == 3) {
-            $transactions->push([
-                'date' => $o->created_at->toDateString(),
-                'transaksi' => 'Penjualan',
-                'nomor' => $o->code,
-                'keterangan' => 'Penjualan oleh karyawan',
-                'debit' => $total,
-                'credit' => 0,
-            ]);
-        } elseif ($account->id == 14) {
-            $transactions->push([
-                'date' => $o->created_at->toDateString(),
-                'transaksi' => 'Penjualan',
-                'nomor' => $o->code,
-                'keterangan' => 'Penjualan oleh karyawan',
-                'debit' => 0,
-                'credit' => $total,
-            ]);
-        }
+    // Tentukan akun lawan berdasarkan akun yang dipilih
+    if ($account->id == 3) {
+        $transactions->push([
+            'date' => $o->created_at->toDateString(),
+            'transaksi' => 'Penjualan',
+            'nomor' => $o->code,
+            'keterangan' => 'Kas', // Keterangan berdasarkan akun lawan (Kas)
+            'kode_akun' => '1103', // Kode akun lawan (Kas)
+            'debit' => $total,
+            'credit' => 0,
+        ]);
+    } elseif ($account->id == 14) {
+        $transactions->push([
+            'date' => $o->created_at->toDateString(),
+            'transaksi' => 'Penjualan',
+            'nomor' => $o->code,
+            'keterangan' => 'Piutang Usaha', // Keterangan berdasarkan akun lawan (Piutang Usaha)
+            'kode_akun' => '1102', // Kode akun lawan (Piutang Usaha)
+            'debit' => 0,
+            'credit' => $total,
+        ]);
     }
+}
 
-    // INCOMES
-    $incomes = Income::with('category')->whereBetween('date_income', [$start, $end])->get();
-    foreach ($incomes as $i) {
-        $amount = $i->amount_income;
-        $akunKategori = $i->category->account_id;
+// INCOMES
+$incomes = Income::with('category')->whereBetween('date_income', [$start, $end])->get();
+foreach ($incomes as $i) {
+    $amount = $i->amount_income;
+    $akunKategori = $i->category->account_id;
 
-        if ($account->id == 3) {
-            $transactions->push([
-                'date' => $i->date_income,
-                'transaksi' => 'Pemasukan',
-                'nomor' => $i->code_income,
-                'keterangan' => $i->name_income,
-                'debit' => $amount,
-                'credit' => 0,
-            ]);
-        } elseif ($account->id == $akunKategori) {
-            $transactions->push([
-                'date' => $i->date_income,
-                'transaksi' => 'Pemasukan',
-                'nomor' => $i->code_income,
-                'keterangan' => $i->name_income,
-                'debit' => 0,
-                'credit' => $amount,
-            ]);
-        }
+    // Tentukan akun lawan berdasarkan akun yang dipilih
+    if ($account->id == 3) {
+        $transactions->push([
+            'date' => $i->date_income,
+            'transaksi' => 'Pemasukan',
+            'nomor' => $i->code_income,
+            'keterangan' => 'Kas', // Keterangan berdasarkan akun lawan (Kas)
+            'kode_akun' => '1103', // Kode akun lawan (Kas)
+            'debit' => $amount,
+            'credit' => 0,
+        ]);
+    } elseif ($account->id == $akunKategori) {
+        $transactions->push([
+            'date' => $i->date_income,
+            'transaksi' => 'Pemasukan',
+            'nomor' => $i->code_income,
+            'keterangan' => $i->name_income, // Keterangan berdasarkan nama pemasukan (kategori)
+            'kode_akun' => $i->category->account_id, // Kode akun berdasarkan kategori pemasukan
+            'debit' => 0,
+            'credit' => $amount,
+        ]);
     }
+}
 
-    // EXPENSES
-    $expenses = Expense::with('category')->whereBetween('date_expense', [$start, $end])->get();
-    foreach ($expenses as $e) {
-        $amount = $e->amount_expense;
-        $akunKategori = $e->category->account_id;
+// EXPENSES
+$expenses = Expense::with('category')->whereBetween('date_expense', [$start, $end])->get();
+foreach ($expenses as $e) {
+    $amount = $e->amount_expense;
+    $akunKategori = $e->category->account_id;
 
-        if ($account->id == $akunKategori) {
-            $transactions->push([
-                'date' => $e->date_expense,
-                'transaksi' => 'Pengeluaran',
-                'nomor' => $e->code_expense,
-                'keterangan' => $e->name_expense,
-                'debit' => $amount,
-                'credit' => 0,
-            ]);
-        } elseif ($account->id == 3) {
-            $transactions->push([
-                'date' => $e->date_expense,
-                'transaksi' => 'Pengeluaran',
-                'nomor' => $e->code_expense,
-                'keterangan' => $e->name_expense,
-                'debit' => 0,
-                'credit' => $amount,
-            ]);
-        }
+    // Tentukan akun lawan berdasarkan akun yang dipilih
+    if ($account->id == $akunKategori) {
+        $transactions->push([
+            'date' => $e->date_expense,
+            'transaksi' => 'Pengeluaran',
+            'nomor' => $e->code_expense,
+            'keterangan' => $e->name_expense, // Keterangan berdasarkan nama pengeluaran
+            'kode_akun' => $akunKategori, // Kode akun berdasarkan kategori pengeluaran
+            'debit' => $amount,
+            'credit' => 0,
+        ]);
+    } elseif ($account->id == 3) {
+        $transactions->push([
+            'date' => $e->date_expense,
+            'transaksi' => 'Pengeluaran',
+            'nomor' => $e->code_expense,
+            'keterangan' => 'Kas', // Keterangan berdasarkan akun lawan (Kas)
+            'kode_akun' => '1103', // Kode akun lawan (Kas)
+            'debit' => 0,
+            'credit' => $amount,
+        ]);
     }
+}
+
 
     // SALDO BERJALAN
     $saldoDebit = $saldoAwalDebit;
