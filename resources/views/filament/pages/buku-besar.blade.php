@@ -73,9 +73,9 @@
                         @foreach ($this->entries as $entry)
                             <tr class="text-center hover:bg-gray-50 transition">
                                 <td class="border px-3 py-2">{{ \Carbon\Carbon::parse($entry['tanggal'])->format('d/m/Y') }}</td>
-                                <td class="border px-3 py-2">{{ $entry['transaksi'] }}</td>
-                                <td class="border px-3 py-2">{{ $entry['nomor'] }}</td>
                                 <td class="border px-3 py-2 text-left">{{ $entry['keterangan'] }}</td>
+                                <td class="border px-3 py-2">{{ $entry['nomor'] }}</td>
+                                <td class="border px-3 py-2">{{ $entry['kode_akun'] }}</td>
                                 <td class="border px-3 py-2 text-right text-gray-800">
                                     {{ $entry['debit'] > 0 ? 'Rp ' . number_format($entry['debit'], 0, ',', '.') : '' }}
                                 </td>
