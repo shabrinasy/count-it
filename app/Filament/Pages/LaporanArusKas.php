@@ -6,6 +6,7 @@ use Filament\Pages\Page;
 use App\Models\Account;
 use App\Models\Purchase;
 use App\Models\Order;
+use App\Models\OrderItem;       
 use App\Models\Income;
 use App\Models\Expense;
 use Carbon\Carbon;
@@ -19,6 +20,8 @@ class LaporanArusKas extends Page
 
     public $month;
 
+    public $kasAkhir = 0;
+
     public function mount()
     {
         $this->month = null; // pengguna wajib pilih dulu
@@ -27,73 +30,177 @@ class LaporanArusKas extends Page
 
     public function getRecordsProperty()
 {
-    if (!$this->month) {
-        return collect(); // Penting! untuk support empty state
-    }
+    if (!$this->month) return collect();
 
     $start = Carbon::parse($this->month . '-01')->startOfMonth();
     $end = Carbon::parse($this->month . '-01')->endOfMonth();
 
-    $accounts = Account::whereNotNull('account_activity')->get();
-
+    $activities = ['operating', 'investing', 'financing'];
     $result = collect();
 
-    foreach (['operating', 'investing', 'financing'] as $activity) {
-        $activityAccounts = $accounts->where('account_activity', $activity);
+    $grandTotalIn = 0;
+    $grandTotalOut = 0;
 
-        $data = $activityAccounts->map(function ($account) use ($start, $end) {
-            $total = 0;
+    // === SALDO AWAL KAS ===
+    $kasAwal = 0;
 
-            // Purchase (khusus akun persediaan)
-            if ($account->code_account === '1103') {
-                $purchases = Purchase::with('purchaseItems')->whereBetween('date', [$start, $end])->get();
-                $total -= $purchases->sum(fn($p) => $p->purchaseItems->sum(fn($i) => $i->quantity * $i->price)); // Kas berkurang
+    // Order (Penjualan)
+    $kasAwal += Order::with('orderItem')
+        ->where('created_at', '<', $start)
+        ->get()
+        ->sum(fn($o) => $o->orderItem->sum(fn($item) => $item->quantity * $item->price));
+
+    // Income
+    $kasAwal += Income::where('date_income', '<', $start)->sum('amount_income');
+
+    // Expense
+    $kasAwal -= Expense::where('date_expense', '<', $start)->sum('amount_expense');
+
+    // Purchase
+    $kasAwal -= Purchase::with('purchaseItems')
+        ->where('date', '<', $start)
+        ->get()
+        ->sum(fn($p) => $p->purchaseItems->sum(fn($item) => $item->quantity * $item->price));
+
+    // === DETAIL ARUS KAS BULAN BERJALAN ===
+    foreach ($activities as $activity) {
+        $rows = collect();
+        $totalIn = 0;
+        $totalOut = 0;
+
+        // ORDER (Penjualan)
+        if ($activity === 'operating') {
+            $orders = Order::with('orderItem')
+                ->whereBetween('created_at', [$start, $end])
+                ->get();
+
+            $totalOrder = 0;
+            foreach ($orders as $order) {
+                $total = $order->orderItem->sum(fn($item) => $item->quantity * $item->price);
+                $totalOrder += $total;
             }
 
-            // Order (khusus akun penjualan)
-            if ($account->code_account === '4101') {
-                $orders = Order::with('orderItem')->whereBetween('created_at', [$start, $end])->get();
-                $total += $orders->sum(fn($o) => $o->orderItem->sum(fn($i) => $i->quantity * $i->price)); // Kas bertambah
+            if ($totalOrder > 0) {
+                $rows->push([
+                    'keterangan' => 'Penerimaan kas dari penjualan',
+                    'pemasukan' => $totalOrder,
+                    'pengeluaran' => 0,
+                ]);
+                $totalIn += $totalOrder;
+            }
+        }
+
+        // PURCHASE (Pembelian bahan baku)
+        if ($activity === 'operating') {
+            $purchases = Purchase::with('purchaseItems')
+                ->whereBetween('date', [$start, $end])
+                ->get();
+
+            $totalPurchase = 0;
+            foreach ($purchases as $purchase) {
+                $amount = $purchase->purchaseItems->sum(fn($item) => $item->quantity * $item->price);
+                $totalPurchase += $amount;
             }
 
-            // Income
-            $incomes = Income::with('category.account')->whereBetween('date_income', [$start, $end])->get();
-            foreach ($incomes as $income) {
-                if ($income->category && $income->category->account_id == $account->id) {
-                    $total += $income->amount_income; // Kas bertambah
-                }
+            if ($totalPurchase > 0) {
+                $rows->push([
+                    'keterangan' => 'Pembayaran kas untuk pembelian bahan baku',
+                    'pemasukan' => 0,
+                    'pengeluaran' => $totalPurchase,
+                ]);
+                $totalOut += $totalPurchase;
             }
+        }
 
-            // Expense
-            $expenses = Expense::with('category.account')->whereBetween('date_expense', [$start, $end])->get();
-            foreach ($expenses as $expense) {
-                if ($expense->category && $expense->category->account_id == $account->id) {
-                    $total -= $expense->amount_expense; // Kas berkurang
-                }
-            }      
-           
-            if ($account->balance === 'credit') {
-                $total = -abs($total);  
+        // INCOME
+        $incomes = Income::with('category.account')
+            ->whereBetween('date_income', [$start, $end])
+            ->get()
+            ->filter(fn($i) => $i->category?->account?->account_activity === $activity)
+            ->groupBy('category_id');
+
+        foreach ($incomes as $catId => $items) {
+            $category = $items->first()->category;
+            $name = $category->name_category ?? 'Pemasukan Lainnya';
+            $isExpense = $category->is_expense ?? false;
+
+            $amount = $items->sum('amount_income');
+
+            if ($amount === 0) continue;
+
+            if ($isExpense) {
+                $rows->push([
+                    'keterangan' => $name,
+                    'pemasukan' => 0,
+                    'pengeluaran' => $amount,
+                ]);
+                $totalOut += $amount;
             } else {
-                $total = abs($total);  
+                $rows->push([
+                    'keterangan' => $name,
+                    'pemasukan' => $amount,
+                    'pengeluaran' => 0,
+                ]);
+                $totalIn += $amount;
             }
+        }
 
+        // EXPENSE
+        $expenses = Expense::with('category.account')
+            ->whereBetween('date_expense', [$start, $end])
+            ->get()
+            ->filter(fn($e) => $e->category?->account?->account_activity === $activity)
+            ->groupBy('category_id');
 
-            return [
-                'code' => $account->code_account,
-                'name' => $account->name_account,
-                'amount' => $total,
-            ];
-        })->filter(fn ($x) => $x['amount'] != 0);
+        foreach ($expenses as $catId => $items) {
+            $category = $items->first()->category;
+            $name = $category->name_category ?? 'Pengeluaran Lainnya';
+            $isExpense = $category->is_expense ?? true;
 
-        $totalKas = $data->sum('amount');
+            $amount = $items->sum('amount_expense');
 
-        $result->push([
-            'activity' => ucfirst($activity) . ' Activity',
-            'accounts' => $data->values(),
-            'total' => $totalKas,
-        ]);
+            if ($amount === 0) continue;
+
+            if ($isExpense) {
+                $rows->push([
+                    'keterangan' => $name,
+                    'pemasukan' => 0,
+                    'pengeluaran' => $amount,
+                ]);
+                $totalOut += $amount;
+            } else {
+                $rows->push([
+                    'keterangan' => $name,
+                    'pemasukan' => $amount,
+                    'pengeluaran' => 0,
+                ]);
+                $totalIn += $amount;
+            }
+        }
+
+        // === TOTAL NETO PER AKTIVITAS ===
+        if ($rows->isNotEmpty()) {
+            $netCashFlow = $totalIn - $totalOut;
+
+            $rows->push([
+                'keterangan' => 'Arus kas neto dari ' . ucfirst($activity) . ' Activity',
+                'pemasukan' => '',
+                'pengeluaran' => '',
+                'saldo' => $netCashFlow,
+            ]);
+
+            $result->push([
+                'activity' => ucfirst($activity) . ' Activity',
+                'accounts' => $rows,
+                'total' => $netCashFlow,
+            ]);
+
+            $grandTotalIn += $totalIn;
+            $grandTotalOut += $totalOut;
+        }
     }
+
+    $this->kasAkhir = $kasAwal + ($grandTotalIn - $grandTotalOut);
 
     return $result;
 }
@@ -104,6 +211,7 @@ class LaporanArusKas extends Page
         return [
             'records' => $this->records,
             'month' => $this->month,
+            'kasAkhir' => $this->kasAkhir,
         ];
     }
 
