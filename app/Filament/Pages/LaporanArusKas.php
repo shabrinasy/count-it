@@ -84,7 +84,7 @@ class LaporanArusKas extends Page
                 $rows->push([
                     'keterangan' => 'Penerimaan kas dari penjualan',
                     'pemasukan' => $totalOrder,
-                    'pengeluaran' => 0,
+                    'pengeluaran' => " ",
                 ]);
                 $totalIn += $totalOrder;
             }
@@ -105,7 +105,7 @@ class LaporanArusKas extends Page
             if ($totalPurchase > 0) {
                 $rows->push([
                     'keterangan' => 'Pembayaran kas untuk pembelian bahan baku',
-                    'pemasukan' => 0,
+                    'pemasukan' => "",
                     'pengeluaran' => $totalPurchase,
                 ]);
                 $totalOut += $totalPurchase;
@@ -131,7 +131,7 @@ class LaporanArusKas extends Page
             if ($isExpense) {
                 $rows->push([
                     'keterangan' => $name,
-                    'pemasukan' => 0,
+                    'pemasukan' => " ",
                     'pengeluaran' => $amount,
                 ]);
                 $totalOut += $amount;
@@ -139,7 +139,7 @@ class LaporanArusKas extends Page
                 $rows->push([
                     'keterangan' => $name,
                     'pemasukan' => $amount,
-                    'pengeluaran' => 0,
+                    'pengeluaran' => " ",
                 ]);
                 $totalIn += $amount;
             }
@@ -164,7 +164,7 @@ class LaporanArusKas extends Page
             if ($isExpense) {
                 $rows->push([
                     'keterangan' => $name,
-                    'pemasukan' => 0,
+                    'pemasukan' => " ",
                     'pengeluaran' => $amount,
                 ]);
                 $totalOut += $amount;
@@ -172,7 +172,7 @@ class LaporanArusKas extends Page
                 $rows->push([
                     'keterangan' => $name,
                     'pemasukan' => $amount,
-                    'pengeluaran' => 0,
+                    'pengeluaran' => " ",
                 ]);
                 $totalIn += $amount;
             }
