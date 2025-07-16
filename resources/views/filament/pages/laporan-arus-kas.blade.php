@@ -41,13 +41,13 @@
                 <tr>
                     <td class="border px-3 py-2">{{ $row['keterangan'] }}</td>
                     <td class="border px-3 py-2 text-right">
-                        {{ $row['pemasukan'] !== '' ? 'Rp ' . number_format($row['pemasukan'], 0, ',', '.') : '' }}
+                        {{ ($row['pemasukan'] ?? null) > 0 ? 'Rp ' . number_format($row['pemasukan'], 0, ',', '.') : '' }}
                     </td>
                     <td class="border px-3 py-2 text-right">
-                        {{ $row['pengeluaran'] !== '' ? 'Rp ' . number_format($row['pengeluaran'], 0, ',', '.') : '' }}
+                        {{ ($row['pengeluaran'] ?? null) > 0 ? 'Rp ' . number_format($row['pengeluaran'], 0, ',', '.') : '' }}
                     </td>
                     <td class="border px-3 py-2 text-right font-semibold">
-                        {{ array_key_exists('saldo', $row) ? 'Rp ' . number_format($row['saldo'], 0, ',', '.') : '' }}
+                        {{ isset($row['saldo']) && $row['saldo'] !== 0 ? 'Rp ' . number_format($row['saldo'], 0, ',', '.') : '' }}
                     </td>
                 </tr>
             @endforeach
