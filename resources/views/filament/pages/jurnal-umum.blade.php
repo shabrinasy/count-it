@@ -20,8 +20,8 @@
             </div>
         @else
     <div class="text-center mb-4 leading-snug">
-    <h2 class="text-2xl font-extrabold text-gray-800 tracking-tight">JURNAL UMUM</h2>
     <h3 class="text-lg font-semibold text-indigo-700">Cafe D'Klakon</h3>
+    <h2 class="text-2xl font-extrabold text-gray-800 tracking-tight">JURNAL UMUM</h2>
     <p class="text-sm text-gray-600">
         Periode: {{ \Carbon\Carbon::createFromFormat('Y-m', $bulan)->translatedFormat('F Y') }}
     </p>
@@ -35,6 +35,7 @@
     <thead>
         <tr>
             <th class="px-4 py-3 text-left">Tanggal</th>
+            <th class="px-4 py-3 text-left">Kode Akun</th>
             <th class="px-4 py-3 text-left">Akun</th>
             <th class="px-4 py-3 text-left">Ref</th>
             <th class="px-4 py-3 text-right">Debit</th>
@@ -57,10 +58,14 @@
                     
                     <td class="hidden"></td>
                 @endif
+                
+                <td class="px-4 py-2 text-gray-900">
+                    {{ $entry['account']['code'] }}
+                </td>
 
                 <!-- Kolom Akun -->
                 <td class="px-4 py-2 text-gray-900">
-                    {{ $entry['account']['code'] }} - {{ $entry['account']['name'] }}
+                    {{ $entry['account']['name'] }}
                 </td>
 
                 <!-- Kolom Ref  -->
