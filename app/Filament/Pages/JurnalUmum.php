@@ -28,18 +28,6 @@ class JurnalUmum extends Page
     protected static ?string $navigationGroup = 'Laporan';
     protected static ?string $navigationLabel = 'Jurnal Umum';
 
-    public function downloadPDF($bulan)
-    {
-        // Ambil data berdasarkan bulan
-        $records = $this->getRecordsProperty();  
-        
-        // Generate PDF menggunakan DomPDF
-        $pdf = PDF::loadView('filament.pages.jurnal-pdf', compact('records', 'bulan'));
-        
-        // Mengunduh PDF dengan nama file yang diinginkan
-        return $pdf->download('jurnalumum_' . $bulan . '.pdf');
-    }
-
     public function getAccount(string $name)
     {
         return \App\Models\Account::where('name_account', $name)->firstOr(function () use ($name) {
@@ -66,6 +54,7 @@ class JurnalUmum extends Page
     $akunKas = $this->getAccount('Kas');
     $akunPersediaan = $this->getAccount('Persediaan Bahan Baku');
     $akunPendapatan = $this->getAccount('Penjualan');
+    $akunHPP = $this->getAccount('Harga Pokok Penjualan');
 
     // INCOME
     $incomes = Income::with('category.account')
@@ -141,16 +130,15 @@ class JurnalUmum extends Page
 
 
     // ORDER (penjualan)
-    // Ambil akun HPP dan Persediaan
-$akunHPP = $this->getAccount('Harga Pokok Penjualan');
-$akunPersediaanBarangDagang = $this->getAccount('Persediaan Bahan Baku');
+    
+
 
 // ORDER (penjualan)
 $orders = Order::with('orderItem')
     ->whereMonth('created_at', $bulan->month)
     ->whereYear('created_at', $bulan->year)
     ->get()
-    ->flatMap(function ($item) use ($akunKas, $akunPendapatan, $akunHPP, $akunPersediaanBarangDagang) {
+    ->flatMap(function ($item) use ($akunKas, $akunPendapatan, $akunHPP, $akunPersediaan) {
         $total = $item->orderItem->sum(fn($orderItem) => $orderItem->quantity * $orderItem->price);
 
         // Hitung total HPP dari bahan baku (sementara dummy, sebaiknya hitung dari BOM atau laporan FIFO)
