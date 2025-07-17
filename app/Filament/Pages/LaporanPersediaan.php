@@ -188,7 +188,8 @@ private function generateLaporanPersediaan($suppliesId, $bulan): array
 }
 
     public static function canAccess(): bool
-    {
-        return in_array(auth()->user()?->role, ['pemilik', 'keuangan']);
-    }
+{
+    return in_array(auth()->user()?->role, ['pemilik', 'keuangan']);
+}
+
 }
