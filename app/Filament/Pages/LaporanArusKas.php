@@ -188,12 +188,6 @@ class LaporanArusKas extends Page
                 'saldo' => $netCashFlow,
             ]);
 
-            $result->push([
-                'activity' => ucfirst($activity) . ' Activity',
-                'accounts' => $rows,
-                'total' => $netCashFlow,
-            ]);
-
             $grandTotalIn += $totalIn;
             $grandTotalOut += $totalOut;
         }
