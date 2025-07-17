@@ -29,11 +29,6 @@
                             </tr>
 
                             <!-- Pemasukan Section -->
-                            <tr>
-                                <td class="font-semibold px-3 py-2">Pemasukan</td>
-                                <td class="font-semibold px-3 py-2">Jumlah</td>
-                                <td class="font-semibold px-3 py-2">Saldo</td>
-                            </tr>
                             @foreach ($section['accounts'] as $row)
                                 @if($row['pemasukan'] > 0)
                                     <tr>
@@ -47,11 +42,6 @@
                             @endforeach
 
                             <!-- Pengeluaran Section -->
-                            <tr>
-                                <td class="font-semibold px-3 py-2">Pengeluaran</td>
-                                <td class="font-semibold px-3 py-2">Jumlah</td>
-                                <td class="font-semibold px-3 py-2">Saldo</td>
-                            </tr>
                             @foreach ($section['accounts'] as $row)
                                 @if($row['pengeluaran'] > 0)
                                     <tr>
@@ -87,3 +77,4 @@
         </x-filament::card>
     @endif
 </x-filament::page>
+
