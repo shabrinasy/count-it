@@ -146,22 +146,22 @@ $akunHPP = $this->getAccount('Harga Pokok Penjualan');
 $akunPersediaanBarangDagang = $this->getAccount('Persediaan Barang Dagang');
 
 // ORDER (penjualan)
-$orders = Order::with('orderItem.menu.billOfMaterial]')
+$orders = Order::with('orderItem')
     ->whereMonth('created_at', $bulan->month)
     ->whereYear('created_at', $bulan->year)
     ->get()
     ->flatMap(function ($item) use ($akunKas, $akunPendapatan, $akunHPP, $akunPersediaanBarangDagang) {
-        // Pakai collect() agar aman
-        $total = collect($item->orderItem)->sum(fn($orderItem) => $orderItem->quantity * $orderItem->price);
+        $total = $item->orderItem->sum(fn($orderItem) => $orderItem->quantity * $orderItem->price);
 
+        // Hitung total HPP dari bahan baku (sementara dummy, sebaiknya hitung dari BOM atau laporan FIFO)
         $totalHPP = 0;
 
-        foreach (collect($item->orderItem) as $orderItem) {
-            $bomItems = $orderItem->menu->billOfMaterial?->items ?? collect();
-
+        foreach ($item->orderItem as $orderItem) {
+            $bomItems = $orderItem->menu->billOfMaterialItems ?? collect();
             foreach ($bomItems as $bomItem) {
+                // Ambil harga dari purchase_items tertua (FIFO)
                 $purchase = \App\Models\PurchaseItem::where('supplies_id', $bomItem->supplies_id)
-                    ->orderBy('id')
+                    ->orderBy('id') // Asumsi ID lebih kecil = lebih lama
                     ->first();
 
                 $harga = $purchase ? ($purchase->price / $purchase->quantity) : 0;
