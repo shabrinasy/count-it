@@ -112,7 +112,7 @@
                     {{ $totalDebit > 0 ? 'Rp ' . number_format($totalDebit, 0, ',', '.') : '' }}
                 </td>
 
-                <td class="px-4 py-2 text-right text-red-600">
+                <td colspan="3" class="px-4 py-2 text-right text-red-600">
                     {{ $totalKredit > 0 ? 'Rp ' . number_format($totalKredit, 0, ',', '.') : '' }}
                 </td>
 
