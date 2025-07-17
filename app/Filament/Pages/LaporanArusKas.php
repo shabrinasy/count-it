@@ -33,29 +33,32 @@ class LaporanArusKas extends Page
         $startOfMonth = $selectedMonth->copy()->startOfMonth();
         $endOfMonth = $selectedMonth->copy()->endOfMonth();
 
-        $orders = Order::whereBetween('created_at', [$startOfMonth, $endOfMonth])
-            ->get()
-            ->map(function ($order) {
-                return [
-                    'tanggal' => Carbon::parse($order->created_at)->format('Y-m-d'),
-                    'keterangan' => 'Penjualan: ' . $order->customer_name,
-                    'jumlah' => $order->total,
-                    'is_expense' => false,
-                    'aktivitas' => 'operasional',
-                ];
-            });
+       $orders = Order::with('orderItem')
+    ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+    ->get()
+    ->map(function ($order) {
+        return [
+            'tanggal' => Carbon::parse($order->created_at)->format('Y-m-d'),
+            'keterangan' => 'Penjualan: ' . $order->customer_name,
+            'jumlah' => $order->orderItems->sum(fn ($item) => $item->quantity * $item->price),
+            'is_expense' => false,
+            'aktivitas' => 'operasional',
+        ];
+    });
 
-        $purchases = Purchase::whereBetween('date', [$startOfMonth, $endOfMonth])
-            ->get()
-            ->map(function ($purchase) {
-                return [
-                    'tanggal' => Carbon::parse($purchase->date)->format('Y-m-d'),
-                    'keterangan' => 'Pembelian: ' . $purchase->supplier_name,
-                    'jumlah' => $purchase->total,
-                    'is_expense' => true,
-                    'aktivitas' => 'operasional',
-                ];
-            });
+$purchases = Purchase::with('purchaseItems')
+    ->whereBetween('date', [$startOfMonth, $endOfMonth])
+    ->get()
+    ->map(function ($purchase) {
+        return [
+            'tanggal' => Carbon::parse($purchase->date)->format('Y-m-d'),
+            'keterangan' => 'Pembelian: ' . $purchase->supplier_name,
+            'jumlah' => $purchase->purchaseItems->sum(fn ($item) => $item->quantity * $item->price),
+            'is_expense' => true,
+            'aktivitas' => 'operasional',
+        ];
+    });
+
 
         $incomes = Income::whereBetween('date_income', [$startOfMonth, $endOfMonth])
             ->get()
