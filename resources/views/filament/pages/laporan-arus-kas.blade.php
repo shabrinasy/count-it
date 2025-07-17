@@ -52,9 +52,10 @@
                             @endforeach
                       
                             <tr>
-                                <td colspan="2" class="font-semibold p-2">Arus Kas Neto:</td>
+                                <td colspan="2" class="font-semibold p-2">Arus Kas Neto dari {{ $section['activity'] }}:</td>
                                 <td colspan="2" class="font-semibold text-right">Rp {{ number_format($section['total'], 0, ',', '.') }}</td>
                             </tr>
+
                         @endforeach
                     </tbody>
                 </table>
