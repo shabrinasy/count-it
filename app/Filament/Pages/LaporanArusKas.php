@@ -67,7 +67,7 @@ class LaporanArusKas extends Page
             return [
                 'tanggal' => $income->date_income,
                 'keterangan' => $income->category->name ?? 'Pemasukan Lainnya',
-                'jumlah' => $income->amount,
+                'jumlah' => $income->amount_income,
                 'is_expense' => false,
                 'aktivitas' => $income->category->type ?? 'operasional',
             ];
@@ -79,7 +79,7 @@ class LaporanArusKas extends Page
             return [
                 'tanggal' => $expense->date_expense,
                 'keterangan' => $expense->category->name ?? 'Pengeluaran Lainnya',
-                'jumlah' => $expense->amount,
+                'jumlah' => $expense->amount_expense,
                 'is_expense' => true,
                 'aktivitas' => $expense->category->type ?? 'operasional',
             ];
@@ -101,8 +101,8 @@ $totalPurchaseSebelumnya = Purchase::with('purchaseItems')
         return $purchase->purchaseItems->sum(fn($item) => $item->quantity * $item->price);
     });
 
-$totalPemasukanSebelumnya = $totalOrderSebelumnya + Income::where('date_income', '<', $startOfMonth)->sum('amount');
-$totalPengeluaranSebelumnya = $totalPurchaseSebelumnya + Expense::where('date_expense', '<', $startOfMonth)->sum('amount');
+$totalPemasukanSebelumnya = $totalOrderSebelumnya + Income::where('date_income', '<', $startOfMonth)->sum('amount_income');
+$totalPengeluaranSebelumnya = $totalPurchaseSebelumnya + Expense::where('date_expense', '<', $startOfMonth)->sum('amount_expense');
 
 $this->kasAwal = $totalPemasukanSebelumnya - $totalPengeluaranSebelumnya;
 
