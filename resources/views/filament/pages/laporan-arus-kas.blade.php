@@ -41,7 +41,7 @@
                                         <td class="text-right px-3 py-2">
                                             Rp {{ number_format($row['pemasukan'], 0, ',', '.') }}
                                         </td>
-                                        <td class="text-right px-3 py-2"></td> <!-- Untuk kolom saldo kosong pada pemasukan -->
+                                        <td class="text-right px-3 py-2"></td> <!-- Saldo kosong di pengeluaran -->
                                     </tr>
                                 @endif
                             @endforeach
@@ -56,7 +56,7 @@
                                 @if($row['pengeluaran'] > 0) 
                                     <tr>
                                         <td class="px-3 py-2">{{ $row['keterangan'] }}</td>
-                                        <td class="text-right px-3 py-2"></td> <!-- Untuk kolom pemasukan kosong pada pengeluaran -->
+                                        <td class="text-right px-3 py-2"></td> <!-- Saldo kosong di pemasukan -->
                                         <td class="text-right px-3 py-2">
                                             (Rp {{ number_format($row['pengeluaran'], 0, ',', '.') }})
                                         </td>
