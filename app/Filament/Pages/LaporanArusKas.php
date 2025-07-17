@@ -104,10 +104,10 @@ class LaporanArusKas extends Page
     protected function getViewData(): array
     {
         return [
-            'records' => $this->records,
+            'records' => $this->getRecordsProperty(),
             'month' => $this->month,
-            'kasAwal' => $this->kasAwal,
             'kasAkhir' => $this->kasAkhir,
         ];
     }
+
 }
