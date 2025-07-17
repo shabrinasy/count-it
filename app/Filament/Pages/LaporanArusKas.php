@@ -24,187 +24,118 @@ class LaporanArusKas extends Page
 
     public function mount()
     {
-        $this->month = null; // pengguna wajib pilih dulu
+        $this->month = null;
     }
-
 
     public function getRecordsProperty()
-{
-    if (!$this->month) return collect();
+    {
+        if (!$this->month) return collect();
 
-    $start = Carbon::parse($this->month . '-01')->startOfMonth();
-    $end = Carbon::parse($this->month . '-01')->endOfMonth();
+        $start = Carbon::parse($this->month . '-01')->startOfMonth();
+        $end = Carbon::parse($this->month . '-01')->endOfMonth();
 
-    $activities = ['operating', 'investing', 'financing'];
-    $result = collect();
+        $activities = ['operating', 'investing', 'financing'];
+        $result = collect();
 
-    $grandTotalIn = 0;
-    $grandTotalOut = 0;
+        $grandTotalIn = 0;
+        $grandTotalOut = 0;
 
-    // === SALDO AWAL KAS ===
-    $kasAwal = 0;
+        $kasAwal = 0;
 
-    // Order (Penjualan)
-    $kasAwal += Order::with('orderItem')
-        ->where('created_at', '<', $start)
-        ->get()
-        ->sum(fn($o) => $o->orderItem->sum(fn($item) => $item->quantity * $item->price));
-
-    // Income
-    $kasAwal += Income::where('date_income', '<', $start)->sum('amount_income');
-
-    // Expense
-    $kasAwal -= Expense::where('date_expense', '<', $start)->sum('amount_expense');
-
-    // Purchase
-    $kasAwal -= Purchase::with('purchaseItems')
-        ->where('date', '<', $start)
-        ->get()
-        ->sum(fn($p) => $p->purchaseItems->sum(fn($item) => $item->quantity * $item->price));
-
-    // === DETAIL ARUS KAS BULAN BERJALAN ===
-    foreach ($activities as $activity) {
-        $rows = collect();
-        $totalIn = 0;
-        $totalOut = 0;
-
-        // ORDER (Penjualan)
-        if ($activity === 'operating') {
-            $orders = Order::with('orderItem')
-                ->whereBetween('created_at', [$start, $end])
-                ->get();
-
-            $totalOrder = 0;
-            foreach ($orders as $order) {
-                $total = $order->orderItem->sum(fn($item) => $item->quantity * $item->price);
-                $totalOrder += $total;
-            }
-
-            if ($totalOrder > 0) {
-                $rows->push([
-                    'keterangan' => 'Penerimaan kas dari penjualan',
-                    'pemasukan' => $totalOrder,
-                    'pengeluaran' => " ",
-                ]);
-                $totalIn += $totalOrder;
-            }
-        }
-
-        // PURCHASE (Pembelian bahan baku)
-        if ($activity === 'operating') {
-            $purchases = Purchase::with('purchaseItems')
-                ->whereBetween('date', [$start, $end])
-                ->get();
-
-            $totalPurchase = 0;
-            foreach ($purchases as $purchase) {
-                $amount = $purchase->purchaseItems->sum(fn($item) => $item->quantity * $item->price);
-                $totalPurchase += $amount;
-            }
-
-            if ($totalPurchase > 0) {
-                $rows->push([
-                    'keterangan' => 'Pembayaran kas untuk pembelian bahan baku',
-                    'pemasukan' => "",
-                    'pengeluaran' => $totalPurchase,
-                ]);
-                $totalOut += $totalPurchase;
-            }
-        }
-
-        // INCOME
-        $incomes = Income::with('category.account')
-            ->whereBetween('date_income', [$start, $end])
+        $kasAwal += Order::with('orderItem')
+            ->where('created_at', '<', $start)
             ->get()
-            ->filter(fn($i) => $i->category?->account?->account_activity === $activity)
-            ->groupBy('category_id');
+            ->sum(fn($o) => $o->orderItem->sum(fn($item) => $item->quantity * $item->price));
 
-        foreach ($incomes as $catId => $items) {
-            $category = $items->first()->category;
-            $name = $category->name_category ?? 'Pemasukan Lainnya';
-            $isExpense = $category->is_expense ?? false;
+        $kasAwal += Income::where('date_income', '<', $start)->sum('amount_income');
+        $kasAwal -= Expense::where('date_expense', '<', $start)->sum('amount_expense');
+        $kasAwal -= Purchase::with('purchaseItems')
+            ->where('date', '<', $start)
+            ->get()
+            ->sum(fn($p) => $p->purchaseItems->sum(fn($item) => $item->quantity * $item->price));
 
-            $amount = $items->sum('amount_income');
+        foreach ($activities as $activity) {
+            $rows = collect();
+            $totalIn = 0;
+            $totalOut = 0;
 
-            if ($amount === 0) continue;
+            if ($activity === 'operating') {
+                $orders = Order::with('orderItem')
+                    ->whereBetween('created_at', [$start, $end])
+                    ->get();
 
-            if ($isExpense) {
-                $rows->push([
-                    'keterangan' => $name,
-                    'pemasukan' => " ",
-                    'pengeluaran' => $amount,
-                ]);
-                $totalOut += $amount;
-            } else {
-                $rows->push([
-                    'keterangan' => $name,
-                    'pemasukan' => $amount,
-                    'pengeluaran' => " ",
-                ]);
+                $totalOrder = 0;
+                foreach ($orders as $order) {
+                    $total = $order->orderItem->sum(fn($item) => $item->quantity * $item->price);
+                    $totalOrder += $total;
+                }
+
+                if ($totalOrder > 0) {
+                    $rows->push(['keterangan' => 'Penerimaan kas dari penjualan', 'jumlah' => $totalOrder]);
+                    $totalIn += $totalOrder;
+                }
+
+                $purchases = Purchase::with('purchaseItems')
+                    ->whereBetween('date', [$start, $end])
+                    ->get();
+
+                $totalPurchase = 0;
+                foreach ($purchases as $purchase) {
+                    $amount = $purchase->purchaseItems->sum(fn($item) => $item->quantity * $item->price);
+                    $totalPurchase += $amount;
+                }
+
+                if ($totalPurchase > 0) {
+                    $rows->push(['keterangan' => 'Pembayaran kas untuk pembelian bahan baku', 'jumlah' => -$totalPurchase]);
+                    $totalOut += $totalPurchase;
+                }
+            }
+
+            $incomes = Income::with('category.account')
+                ->whereBetween('date_income', [$start, $end])
+                ->get()
+                ->filter(fn($i) => $i->category?->account?->account_activity === $activity);
+
+            foreach ($incomes as $i) {
+                $amount = $i->amount_income;
+                $name = $i->category->name_category ?? 'Pemasukan Lainnya';
+                $rows->push(['keterangan' => $name, 'jumlah' => $amount]);
                 $totalIn += $amount;
             }
-        }
 
-        // EXPENSE
-        $expenses = Expense::with('category.account')
-            ->whereBetween('date_expense', [$start, $end])
-            ->get()
-            ->filter(fn($e) => $e->category?->account?->account_activity === $activity)
-            ->groupBy('category_id');
+            $expenses = Expense::with('category.account')
+                ->whereBetween('date_expense', [$start, $end])
+                ->get()
+                ->filter(fn($e) => $e->category?->account?->account_activity === $activity);
 
-        foreach ($expenses as $catId => $items) {
-            $category = $items->first()->category;
-            $name = $category->name_category ?? 'Pengeluaran Lainnya';
-            $isExpense = $category->is_expense ?? true;
-
-            $amount = $items->sum('amount_expense');
-
-            if ($amount === 0) continue;
-
-            if ($isExpense) {
-                $rows->push([
-                    'keterangan' => $name,
-                    'pemasukan' => " ",
-                    'pengeluaran' => $amount,
-                ]);
+            foreach ($expenses as $e) {
+                $amount = $e->amount_expense;
+                $name = $e->category->name_category ?? 'Pengeluaran Lainnya';
+                $rows->push(['keterangan' => $name, 'jumlah' => -$amount]);
                 $totalOut += $amount;
-            } else {
-                $rows->push([
-                    'keterangan' => $name,
-                    'pemasukan' => $amount,
-                    'pengeluaran' => " ",
+            }
+
+            if ($rows->isNotEmpty()) {
+                $netCashFlow = $totalIn - $totalOut;
+
+                $rows->push(['keterangan' => '', 'jumlah' => '']);
+                $rows->push(['keterangan' => 'Arus kas neto dari ' . ucfirst($activity), 'jumlah' => $netCashFlow]);
+
+                $result->push([
+                    'activity' => ucfirst($activity),
+                    'accounts' => $rows,
+                    'total' => $netCashFlow,
                 ]);
-                $totalIn += $amount;
+
+                $grandTotalIn += $totalIn;
+                $grandTotalOut += $totalOut;
             }
         }
 
-        // === TOTAL NETO PER AKTIVITAS ===
-        if ($rows->isNotEmpty()) {
-            $netCashFlow = $totalIn - $totalOut;
+        $this->kasAkhir = $kasAwal + ($grandTotalIn - $grandTotalOut);
 
-            $rows->push([
-                'keterangan' => 'Arus kas neto dari ' . ucfirst($activity) . ' Activity',
-                'pemasukan' => '',
-                'pengeluaran' => '',
-                'saldo' => $netCashFlow,
-            ]);
-
-            $result->push([
-                'activity' => ucfirst($activity) . ' Activity',
-                'accounts' => $rows,
-                'total' => $netCashFlow,
-            ]);
-
-            $grandTotalIn += $totalIn;
-            $grandTotalOut += $totalOut;
-        }
+        return $result;
     }
-
-    $this->kasAkhir = $kasAwal + ($grandTotalIn - $grandTotalOut);
-
-    return $result;
-}
-
 
     protected function getViewData(): array
     {
@@ -216,8 +147,7 @@ class LaporanArusKas extends Page
     }
 
     public static function canAccess(): bool
-{
-    return in_array(auth()->user()?->role, ['pemilik', 'keuangan']);
-}
-
+    {
+        return in_array(auth()->user()?->role, ['pemilik', 'keuangan']);
+    }
 }
