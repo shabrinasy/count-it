@@ -107,7 +107,7 @@
     @if(count($records) > 0)
         <tfoot class="bg-gray-100 text-sm font-bold">
             <tr>
-                <td colspan="3" class="px-4 py-2 text-right">Total</td>
+                <td colspan="2" class="px-4 py-2 text-right">Total</td>
                 <td class="px-4 py-2 text-right text-green-600">
                     {{ $totalDebit > 0 ? 'Rp ' . number_format($totalDebit, 0, ',', '.') : '' }}
                 </td>
