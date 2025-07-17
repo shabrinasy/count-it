@@ -141,21 +141,55 @@ class JurnalUmum extends Page
 
 
     // ORDER (penjualan)
-    $orders = Order::with('orderItem') // <--- tambahkan ini!
+    // Ambil akun HPP dan Persediaan
+$akunHPP = $this->getAccount('Harga Pokok Penjualan');
+$akunPersediaanBarangDagang = $this->getAccount('Persediaan Barang Dagang');
+
+// ORDER (penjualan)
+$orders = Order::with('orderItem')
     ->whereMonth('created_at', $bulan->month)
     ->whereYear('created_at', $bulan->year)
     ->get()
-    ->map(function ($item) use ($akunKas, $akunPendapatan) {
+    ->flatMap(function ($item) use ($akunKas, $akunPendapatan, $akunHPP, $akunPersediaanBarangDagang) {
         $total = $item->orderItem->sum(fn($orderItem) => $orderItem->quantity * $orderItem->price);
+
+        // Hitung total HPP dari bahan baku (sementara dummy, sebaiknya hitung dari BOM atau laporan FIFO)
+        $totalHPP = 0;
+
+        foreach ($item->orderItem as $orderItem) {
+            $bomItems = $orderItem->menu->billOfMaterialItems ?? collect();
+            foreach ($bomItems as $bomItem) {
+                // Ambil harga dari purchase_items tertua (FIFO)
+                $purchase = \App\Models\PurchaseItem::where('supplies_id', $bomItem->supplies_id)
+                    ->orderBy('id') // Asumsi ID lebih kecil = lebih lama
+                    ->first();
+
+                $harga = $purchase ? ($purchase->price / $purchase->quantity) : 0;
+
+                $totalHPP += $harga * $bomItem->quantity * $orderItem->quantity;
+            }
+        }
+
         return [
-            'date' => $item->created_at,
-            'code' => $item->code,
-            'entries' => [
-                ['account' => ['code' => $akunKas->code_account, 'name' => $akunKas->name_account], 'debit' => $total, 'credit' => 0],
-                ['account' => ['code' => $akunPendapatan->code_account, 'name' => $akunPendapatan->name_account], 'debit' => 0, 'credit' => $total],
+            [
+                'date' => $item->created_at,
+                'code' => $item->code,
+                'entries' => [
+                    ['account' => ['code' => $akunKas->code_account, 'name' => $akunKas->name_account], 'debit' => $total, 'credit' => 0],
+                    ['account' => ['code' => $akunPendapatan->code_account, 'name' => $akunPendapatan->name_account], 'debit' => 0, 'credit' => $total],
+                ],
+            ],
+            [
+                'date' => $item->created_at,
+                'code' => $item->code . '-HPP',
+                'entries' => [
+                    ['account' => ['code' => $akunHPP->code_account, 'name' => $akunHPP->name_account], 'debit' => $totalHPP, 'credit' => 0],
+                    ['account' => ['code' => $akunPersediaanBarangDagang->code_account, 'name' => $akunPersediaanBarangDagang->name_account], 'debit' => 0, 'credit' => $totalHPP],
+                ],
             ],
         ];
     });
+
 
 
 
