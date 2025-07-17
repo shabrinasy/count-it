@@ -87,4 +87,3 @@
         </x-filament::card>
     @endif
 </x-filament::page>
-
