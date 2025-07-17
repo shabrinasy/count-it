@@ -23,26 +23,43 @@ class LaporanPenjualan extends Page
 
 
     public function getRecordsProperty()
-    {
-        if (!$this->month) return collect();
+{
+    if (!$this->month) return collect();
 
-        $start = Carbon::parse($this->month . '-01')->startOfMonth();
-        $end = Carbon::parse($this->month . '-01')->endOfMonth();
+    $start = Carbon::parse($this->month . '-01')->startOfMonth();
+    $end = Carbon::parse($this->month . '-01')->endOfMonth();
 
-        return OrderItem::with(['menu.categoryMenu', 'order'])
-            ->whereHas('order', fn ($q) => $q->whereBetween('created_at', [$start, $end]))
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'tanggal' => Carbon::parse($item->order->created_at)->format('d/m/Y'),
-                    'kategori' => $item->menu->categoryMenu->name ?? '-',
-                    'menu' => $item->menu->name ?? '-',
-                    'jumlah' => $item->quantity,
-                    'harga_satuan' => $item->menu->price ?? 0,
-                    'total' => $item->quantity * ($item->menu->price ?? 0),
-                ];
-            });
-    }
+    $items = OrderItem::with(['menu.categoryMenu', 'order'])
+        ->whereHas('order', fn ($q) => $q->whereBetween('created_at', [$start, $end]))
+        ->get()
+        ->map(function ($item) {
+            return [
+                'tanggal' => Carbon::parse($item->order->created_at)->format('d/m/Y'),
+                'menu_id' => $item->menu_id,
+                'kategori' => $item->menu->categoryMenu->name ?? '-',
+                'menu' => $item->menu->name ?? '-',
+                'harga_satuan' => $item->menu->price ?? 0,
+                'jumlah' => $item->quantity,
+                'total' => $item->quantity * ($item->menu->price ?? 0),
+            ];
+        });
+
+    // Kelompokkan berdasarkan tanggal + menu_id
+    return $items->groupBy(fn ($item) => $item['tanggal'] . '-' . $item['menu_id'])
+        ->map(function ($group) {
+            $first = $group->first();
+            return [
+                'tanggal' => $first['tanggal'],
+                'kategori' => $first['kategori'],
+                'menu' => $first['menu'],
+                'harga_satuan' => $first['harga_satuan'],
+                'jumlah' => $group->sum('jumlah'),
+                'total' => $group->sum('total'),
+            ];
+        })
+        ->values(); // reset indexing
+}
+
 
     public function getGrandTotalProperty()
     {
@@ -63,3 +80,4 @@ class LaporanPenjualan extends Page
 }
 
 }
+
