@@ -7,7 +7,7 @@
     </x-filament::card>
 
     @php
-        $tanggalAkhir = \Carbon\Carbon::parse($month)->endOfMonth()->format('d F Y');
+        $tanggalAkhir = $month ? \Carbon\Carbon::parse($month)->endOfMonth()->format('d F Y') : '';
     @endphp
 
     @if ($month)
@@ -27,50 +27,42 @@
                             </td>
                         </tr>
 
-                        {{-- Pemasukan --}}
-                        @php $firstIn = true; @endphp
-                        @foreach ($section['accounts'] as $row)
-                            @if (!empty($row['pemasukan']) && $row['pemasukan'] > 0)
-                                <tr>
-                                    <td class="pl-4 pr-2">
-                                        @if ($firstIn)
-                                            <span class="font-medium">Penerimaan:</span><br>
-                                            @php $firstIn = false; @endphp
-                                        @endif
-                                        {{ $row['keterangan'] }}
-                                    </td>
-                                    <td class="text-right pr-3">Rp {{ number_format($row['pemasukan'], 0, ',', '.') }}</td>
-                                    <td></td>
-                                </tr>
-                            @endif
-                        @endforeach
+                        @php $firstIn = true; $firstOut = true; @endphp
 
-                        {{-- Pengeluaran --}}
-                        @php $firstOut = true; @endphp
                         @foreach ($section['accounts'] as $row)
-                            @if (!empty($row['pengeluaran']) && $row['pengeluaran'] > 0)
-                                <tr>
-                                    <td class="pl-4 pr-2">
-                                        @if ($firstOut)
-                                            <br><span class="font-medium">Pengeluaran:</span><br>
-                                            @php $firstOut = false; @endphp
-                                        @endif
-                                        {{ $row['keterangan'] }}
-                                    </td>
-                                    <td class="text-right pr-3">Rp -{{ number_format($row['pengeluaran'], 0, ',', '.') }}</td>
-                                    <td></td>
-                                </tr>
-                            @endif
-                        @endforeach
-
-                        {{-- Arus Kas Neto --}}
-                        @foreach ($section['accounts'] as $row)
-                            @if (isset($row['saldo']))
+                            @if ($row['keterangan'] && $row['jumlah'] !== '')
+                                @if ($row['jumlah'] >= 0)
+                                    <tr>
+                                        <td class="pl-4 pr-2">
+                                            @if ($firstIn)
+                                                <span class="font-medium">Penerimaan:</span><br>
+                                                @php $firstIn = false; @endphp
+                                            @endif
+                                            {{ $row['keterangan'] }}
+                                        </td>
+                                        <td class="text-right pr-3">Rp {{ number_format($row['jumlah'], 0, ',', '.') }}</td>
+                                        <td></td>
+                                    </tr>
+                                @else
+                                    <tr>
+                                        <td class="pl-4 pr-2">
+                                            @if ($firstOut)
+                                                <br><span class="font-medium">Pengeluaran:</span><br>
+                                                @php $firstOut = false; @endphp
+                                            @endif
+                                            {{ $row['keterangan'] }}
+                                        </td>
+                                        <td class="text-right pr-3">Rp {{ number_format($row['jumlah'], 0, ',', '.') }}</td>
+                                        <td></td>
+                                    </tr>
+                                @endif
+                            @elseif ($row['keterangan'] && $row['jumlah'] === '')
+                                {{-- Baris Arus Kas Neto --}}
                                 <tr>
                                     <td class="font-semibold">{{ $row['keterangan'] }}</td>
                                     <td></td>
                                     <td class="text-right font-semibold">
-                                        Rp {{ number_format($row['saldo'], 0, ',', '.') }}
+                                        Rp {{ number_format($section['total'], 0, ',', '.') }}
                                     </td>
                                 </tr>
                             @endif
@@ -78,7 +70,7 @@
                     </table>
                 @endforeach
 
-                {{-- Kas akhir --}}
+                {{-- Kenaikan / Penurunan Kas --}}
                 <div class="text-right font-semibold text-base px-3 py-2">
                     Kenaikan (penurunan) kas: Rp {{ number_format($kasAkhir, 0, ',', '.') }}
                 </div>
