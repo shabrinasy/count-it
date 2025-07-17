@@ -51,7 +51,7 @@
                                 @endif
                             @endforeach
 
-                            <!-- Arus Kas Neto placed at the bottom -->
+                            <!-- Now, "Arus Kas Neto" comes AFTER both "Pemasukan" and "Pengeluaran" -->
                             <tr>
                                 <td colspan="2" class="font-semibold p-2">Arus Kas Neto:</td>
                                 <td colspan="2" class="font-semibold text-right">Rp {{ number_format($section['total'], 0, ',', '.') }}</td>
