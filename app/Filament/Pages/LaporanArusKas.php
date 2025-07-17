@@ -221,4 +221,3 @@ class LaporanArusKas extends Page
 }
 
 }
-
