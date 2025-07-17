@@ -182,12 +182,6 @@ class LaporanArusKas extends Page
         if ($rows->isNotEmpty()) {
             $netCashFlow = $totalIn - $totalOut;
 
-            $rows->push([
-                'pemasukan' => '',
-                'pengeluaran' => '',
-                'saldo' => $netCashFlow,
-            ]);
-
              $result->push([
                 'activity' => ucfirst($activity) . ' Activity',
                 'accounts' => $rows,
