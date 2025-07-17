@@ -82,12 +82,12 @@
                                 </td>
                                 <td class="border px-3 py-2 text-right font-semibold text-green-600">
                                     @if ($entry['saldo_debit'] !== '')
-                                        {{ $entry['saldo_debit'] < 0 ? 'Rp (' . number_format(abs($entry['saldo_debit']), 0, ',', '.') . ')' : 'Rp ' . number_format($entry['saldo_debit'], 0, ',', '.') }}
+                                        Rp {{ number_format(abs($entry['saldo_debit']), 0, ',', '.') }}
                                     @endif
                                 </td>
                                 <td class="border px-3 py-2 text-right font-semibold text-red-600">
                                     @if ($entry['saldo_kredit'] !== '')
-                                        {{ $entry['saldo_kredit'] < 0 ? 'Rp (' . number_format(abs($entry['saldo_kredit']), 0, ',', '.') . ')' : 'Rp ' . number_format($entry['saldo_kredit'], 0, ',', '.') }}
+                                        Rp {{ number_format(abs($entry['saldo_kredit']), 0, ',', '.') }}
                                     @endif
                                 </td>
                             </tr>
