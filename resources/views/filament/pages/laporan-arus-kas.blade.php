@@ -64,21 +64,11 @@
                                 @endif
                             @endforeach
 
-                            <!-- Arus Kas Neto Section for this Activity -->
-                            @php
-                                $totalIn = 0;
-                                $totalOut = 0;
-                                foreach ($section['accounts'] as $row) {
-                                    $totalIn += $row['pemasukan'];
-                                    $totalOut += $row['pengeluaran'];
-                                }
-                                $netCashFlow = $totalIn - $totalOut;
-                            @endphp
-
+                            <!-- Arus Kas Neto Section -->
                             <tr>
                                 <td class="font-semibold px-3 py-2">Arus Kas Neto</td>
                                 <td class="text-right font-semibold px-3 py-2">
-                                    Rp {{ number_format($netCashFlow, 0, ',', '.') }}
+                                    Rp {{ number_format($section['total'], 0, ',', '.') }}
                                 </td>
                                 <td class="text-right px-3 py-2"></td> <!-- Saldo ada di kolom kanan -->
                             </tr>
