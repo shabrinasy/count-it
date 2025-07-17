@@ -29,8 +29,13 @@
                             </tr>
 
                             <!-- Pemasukan Section -->
+                            <tr>
+                                <td colspan="3" class="font-semibold px-3 py-2 text-left bg-gray-100">
+                                    Pemasukan:
+                                </td>
+                            </tr>
                             @foreach ($section['accounts'] as $row)
-                                @if($row['pemasukan'] > 0)
+                                @if($row['pemasukan'] > 0) 
                                     <tr>
                                         <td class="px-3 py-2">{{ $row['keterangan'] }}</td>
                                         <td class="text-right px-3 py-2">
@@ -42,13 +47,18 @@
                             @endforeach
 
                             <!-- Pengeluaran Section -->
+                            <tr>
+                                <td colspan="3" class="font-semibold px-3 py-2 text-left bg-gray-100">
+                                    Pengeluaran:
+                                </td>
+                            </tr>
                             @foreach ($section['accounts'] as $row)
-                                @if($row['pengeluaran'] > 0)
+                                @if($row['pengeluaran'] > 0) 
                                     <tr>
                                         <td class="px-3 py-2">{{ $row['keterangan'] }}</td>
                                         <td class="px-3 py-2"></td>
                                         <td class="text-right px-3 py-2">
-                                            Rp {{ number_format($row['pengeluaran'], 0, ',', '.') }}
+                                            (Rp {{ number_format($row['pengeluaran'], 0, ',', '.') }})
                                         </td>
                                     </tr>
                                 @endif
@@ -77,4 +87,3 @@
         </x-filament::card>
     @endif
 </x-filament::page>
-
