@@ -157,7 +157,7 @@ $orders = Order::with('orderItem.menu.billOfMaterial]')
         $totalHPP = 0;
 
         foreach (collect($item->orderItem) as $orderItem) {
-            $bomItems = $orderItem->menu->billOfMaterial ?? collect();
+            $bomItems = $orderItem->menu->billOfMaterial?->items ?? collect();
 
             foreach ($bomItems as $bomItem) {
                 $purchase = \App\Models\PurchaseItem::where('supplies_id', $bomItem->supplies_id)
