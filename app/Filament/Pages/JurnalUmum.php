@@ -177,12 +177,6 @@ $orders = Order::with('orderItem')
                 'entries' => [
                     ['account' => ['code' => $akunKas->code_account, 'name' => $akunKas->name_account], 'debit' => $total, 'credit' => 0],
                     ['account' => ['code' => $akunPendapatan->code_account, 'name' => $akunPendapatan->name_account], 'debit' => 0, 'credit' => $total],
-                ],
-            ],
-            [
-                'date' => $item->created_at,
-                'code' => $item->code . '-HPP',
-                'entries' => [
                     ['account' => ['code' => $akunHPP->code_account, 'name' => $akunHPP->name_account], 'debit' => $totalHPP, 'credit' => 0],
                     ['account' => ['code' => $akunPersediaanBarangDagang->code_account, 'name' => $akunPersediaanBarangDagang->name_account], 'debit' => 0, 'credit' => $totalHPP],
                 ],
