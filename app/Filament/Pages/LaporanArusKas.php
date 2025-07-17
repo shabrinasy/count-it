@@ -86,12 +86,26 @@ class LaporanArusKas extends Page
         });
 
     // Kas awal dihitung dari transaksi sebelum bulan terpilih
-    $totalPemasukanSebelumnya = Order::where('created_at', '<', $startOfMonth)->sum('total')
-        + Income::where('date_income', '<', $startOfMonth)->sum('amount');
-    $totalPengeluaranSebelumnya = Purchase::where('date', '<', $startOfMonth)->sum('total')
-        + Expense::where('date_expense', '<', $startOfMonth)->sum('amount');
 
-    $this->kasAwal = $totalPemasukanSebelumnya - $totalPengeluaranSebelumnya;
+$totalOrderSebelumnya = Order::with('orderItems')
+    ->where('created_at', '<', $startOfMonth)
+    ->get()
+    ->sum(function ($order) {
+        return $order->orderItems->sum(fn($item) => $item->quantity * $item->price);
+    });
+
+$totalPurchaseSebelumnya = Purchase::with('purchaseItems')
+    ->where('date', '<', $startOfMonth)
+    ->get()
+    ->sum(function ($purchase) {
+        return $purchase->purchaseItems->sum(fn($item) => $item->quantity * $item->price);
+    });
+
+$totalPemasukanSebelumnya = $totalOrderSebelumnya + Income::where('date_income', '<', $startOfMonth)->sum('amount');
+$totalPengeluaranSebelumnya = $totalPurchaseSebelumnya + Expense::where('date_expense', '<', $startOfMonth)->sum('amount');
+
+$this->kasAwal = $totalPemasukanSebelumnya - $totalPengeluaranSebelumnya;
+
 
     $records = $orders
         ->concat($purchases)
