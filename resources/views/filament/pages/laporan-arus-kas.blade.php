@@ -51,6 +51,7 @@
                                 @endif
                             @endforeach
 
+                            <!-- Arus Kas Neto placed at the bottom -->
                             <tr>
                                 <td colspan="2" class="font-semibold p-2">Arus Kas Neto:</td>
                                 <td colspan="2" class="font-semibold text-right">Rp {{ number_format($section['total'], 0, ',', '.') }}</td>
@@ -59,6 +60,7 @@
                     </tbody>
                 </table>
 
+                <!-- Final Arus Kas Neto -->
                 <div class="text-right font-semibold text-base px-3 py-2">
                     Kenaikan neto dalam kas dan saldo kas {{ $tanggalAkhir }}: Rp {{ number_format($kasAkhir, 0, ',', '.') }}
                 </div>
