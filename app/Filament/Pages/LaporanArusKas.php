@@ -151,9 +151,11 @@ class LaporanArusKas extends Page
         return [
             'records' => $this->records,
             'month' => $this->month,
+            'kasAwal' => $this->kasAkhir - ($this->records->sum('total')),
             'kasAkhir' => $this->kasAkhir,
         ];
     }
+
 
     public static function canAccess(): bool
     {
