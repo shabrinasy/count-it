@@ -57,7 +57,7 @@ class LaporanArusKas extends Page
                 ];
             });
 
-        $incomes = Income::whereBetween('date', [$startOfMonth, $endOfMonth])
+        $incomes = Income::whereBetween('created_at', [$startOfMonth, $endOfMonth])
             ->get()
             ->map(function ($income) {
                 return [
