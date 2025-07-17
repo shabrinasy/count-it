@@ -61,7 +61,7 @@ class LaporanArusKas extends Page
             ->get()
             ->map(function ($income) {
                 return [
-                    'tanggal' => $income->date,
+                    'tanggal' => $income->created_at,
                     'keterangan' => $income->category->name ?? 'Pemasukan Lainnya',
                     'jumlah' => $income->amount,
                     'is_expense' => false,
