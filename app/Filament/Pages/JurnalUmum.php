@@ -146,7 +146,7 @@ $akunHPP = $this->getAccount('Harga Pokok Penjualan');
 $akunPersediaanBarangDagang = $this->getAccount('Persediaan Barang Dagang');
 
 // ORDER (penjualan)
-$orders = Order::with('orderItem.menu.billOfMaterialItems')
+$orders = Order::with('orderItem.menu.billOfMaterial]')
     ->whereMonth('created_at', $bulan->month)
     ->whereYear('created_at', $bulan->year)
     ->get()
@@ -157,7 +157,7 @@ $orders = Order::with('orderItem.menu.billOfMaterialItems')
         $totalHPP = 0;
 
         foreach (collect($item->orderItem) as $orderItem) {
-            $bomItems = $orderItem->menu->billOfMaterialItems ?? collect();
+            $bomItems = $orderItem->menu->billOfMaterial ?? collect();
 
             foreach ($bomItems as $bomItem) {
                 $purchase = \App\Models\PurchaseItem::where('supplies_id', $bomItem->supplies_id)
