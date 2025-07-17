@@ -29,6 +29,8 @@ class LaporanArusKas extends Page
 
     public function getRecordsProperty()
     {
+        $this->kasAwal = $kasAwal;
+
         if (!$this->month) return collect();
 
         $start = Carbon::parse($this->month . '-01')->startOfMonth();
