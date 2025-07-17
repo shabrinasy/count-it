@@ -45,11 +45,11 @@ class LaporanArusKas extends Page
                 ];
             });
 
-        $purchases = Purchase::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+        $purchases = Purchase::whereBetween('date', [$startOfMonth, $endOfMonth])
             ->get()
             ->map(function ($purchase) {
                 return [
-                    'tanggal' => Carbon::parse($purchase->created_at)->format('Y-m-d'),
+                    'tanggal' => Carbon::parse($purchase->date)->format('Y-m-d'),
                     'keterangan' => 'Pembelian: ' . $purchase->supplier_name,
                     'jumlah' => $purchase->total,
                     'is_expense' => true,
@@ -57,11 +57,11 @@ class LaporanArusKas extends Page
                 ];
             });
 
-        $incomes = Income::whereBetween('created_at', [$startOfMonth, $endOfMonth])
+        $incomes = Income::whereBetween('date_income', [$startOfMonth, $endOfMonth])
             ->get()
             ->map(function ($income) {
                 return [
-                    'tanggal' => $income->created_at,
+                    'tanggal' => $income->date_income,
                     'keterangan' => $income->category->name ?? 'Pemasukan Lainnya',
                     'jumlah' => $income->amount,
                     'is_expense' => false,
@@ -84,7 +84,7 @@ class LaporanArusKas extends Page
         // Kas awal dihitung dari transaksi sebelum bulan terpilih
         $totalPemasukanSebelumnya = Order::where('created_at', '<', $startOfMonth)->sum('total')
             + Income::where('date', '<', $startOfMonth)->sum('amount');
-        $totalPengeluaranSebelumnya = Purchase::where('created_at', '<', $startOfMonth)->sum('total')
+        $totalPengeluaranSebelumnya = Purchase::where('date', '<', $startOfMonth)->sum('total')
             + Expense::where('date', '<', $startOfMonth)->sum('amount');
 
         $this->kasAwal = $totalPemasukanSebelumnya - $totalPengeluaranSebelumnya;
