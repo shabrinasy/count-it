@@ -134,27 +134,36 @@ class JurnalUmum extends Page
 
 
 // ORDER (penjualan)
-$orders = Order::with('orderItem')
+$orders = Order::with('orderItem.menu.billOfMaterial.billOfMaterialItems')
     ->whereMonth('created_at', $bulan->month)
     ->whereYear('created_at', $bulan->year)
     ->get()
     ->flatMap(function ($item) use ($akunKas, $akunPendapatan, $akunHPP, $akunPersediaan) {
-        $total = $item->orderItem->sum(fn($orderItem) => $orderItem->quantity * $orderItem->price);
-
-        // Hitung total HPP dari bahan baku (sementara dummy, sebaiknya hitung dari BOM atau laporan FIFO)
+        $totalPendapatan = $item->orderItem->sum(fn($oi) => $oi->quantity * $oi->price);
         $totalHPP = 0;
 
         foreach ($item->orderItem as $orderItem) {
-            $bomItems = $orderItem->menu->billOfMaterialItems ?? collect();
-            foreach ($bomItems as $bomItem) {
-                // Ambil harga dari purchase_items tertua (FIFO)
-                $purchase = \App\Models\PurchaseItem::where('supplies_id', $bomItem->supplies_id)
-                    ->orderBy('id') // Asumsi ID lebih kecil = lebih lama
-                    ->first();
+            $menu = $orderItem->menu;
+            if (!$menu || !$menu->billOfMaterial) continue;
 
-                $harga = $purchase ? ($purchase->price / $purchase->quantity) : 0;
+            foreach ($menu->billOfMaterial->billOfMaterialItems as $bomItem) {
+                $jumlahPemakaian = $bomItem->quantity * $orderItem->quantity;
 
-                $totalHPP += $harga * $bomItem->quantity * $orderItem->quantity;
+                // Cari lapisan FIFO
+                $purchaseItems = \App\Models\PurchaseItem::where('supplies_id', $bomItem->supplies_id)
+                    ->orderBy('id')
+                    ->get();
+
+                $qtyOut = $jumlahPemakaian;
+
+                foreach ($purchaseItems as $batch) {
+                    if ($qtyOut <= 0) break;
+
+                    $hargaUnit = $batch->quantity > 0 ? ($batch->price / $batch->quantity) : 0;
+                    $ambil = min($batch->quantity, $qtyOut);
+                    $totalHPP += $ambil * $hargaUnit;
+                    $qtyOut -= $ambil;
+                }
             }
         }
 
@@ -163,12 +172,12 @@ $orders = Order::with('orderItem')
                 'date' => $item->created_at,
                 'code' => $item->code,
                 'entries' => [
-                    ['account' => ['code' => $akunKas->code_account, 'name' => $akunKas->name_account], 'debit' => $total, 'credit' => 0],
-                    ['account' => ['code' => $akunPendapatan->code_account, 'name' => $akunPendapatan->name_account], 'debit' => 0, 'credit' => $total],
+                    ['account' => ['code' => $akunKas->code_account, 'name' => $akunKas->name_account], 'debit' => $totalPendapatan, 'credit' => 0],
+                    ['account' => ['code' => $akunPendapatan->code_account, 'name' => $akunPendapatan->name_account], 'debit' => 0, 'credit' => $totalPendapatan],
                     ['account' => ['code' => $akunHPP->code_account, 'name' => $akunHPP->name_account], 'debit' => $totalHPP, 'credit' => 0],
-                    ['account' => ['code' => $akunPersediaanBarangDagang->code_account, 'name' => $akunPersediaanBarangDagang->name_account], 'debit' => 0, 'credit' => $totalHPP],
+                    ['account' => ['code' => $akunPersediaan->code_account, 'name' => $akunPersediaan->name_account], 'debit' => 0, 'credit' => $totalHPP],
                 ],
-            ],
+            ]
         ];
     });
 
