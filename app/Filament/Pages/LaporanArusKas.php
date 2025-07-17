@@ -19,7 +19,6 @@ class LaporanArusKas extends Page
     protected static string $view = 'filament.pages.laporan-arus-kas';
 
     public $month;
-
     public $kasAkhir = 0;
 
     public function mount()
@@ -40,8 +39,7 @@ class LaporanArusKas extends Page
         $grandTotalIn = 0;
         $grandTotalOut = 0;
 
-        $this->kasAwal = 0;
-
+        $kasAwal = 0;
         $kasAwal += Order::with('orderItem')
             ->where('created_at', '<', $start)
             ->get()
@@ -71,7 +69,7 @@ class LaporanArusKas extends Page
                 }
 
                 if ($totalOrder > 0) {
-                    $rows->push(['keterangan' => 'Penerimaan kas dari penjualan', 'jumlah' => $totalOrder]);
+                    $rows->push(['keterangan' => 'Penerimaan kas dari penjualan', 'jumlah' => $totalOrder, 'type' => 'in']);
                     $totalIn += $totalOrder;
                 }
 
@@ -86,7 +84,7 @@ class LaporanArusKas extends Page
                 }
 
                 if ($totalPurchase > 0) {
-                    $rows->push(['keterangan' => 'Pembayaran kas untuk pembelian bahan baku', 'jumlah' => -$totalPurchase]);
+                    $rows->push(['keterangan' => 'Pembayaran kas untuk pembelian bahan baku', 'jumlah' => $totalPurchase, 'type' => 'out']);
                     $totalOut += $totalPurchase;
                 }
             }
@@ -99,7 +97,7 @@ class LaporanArusKas extends Page
             foreach ($incomes as $i) {
                 $amount = $i->amount_income;
                 $name = $i->category->name_category ?? 'Pemasukan Lainnya';
-                $rows->push(['keterangan' => $name, 'jumlah' => $amount]);
+                $rows->push(['keterangan' => $name, 'jumlah' => $amount, 'type' => 'in']);
                 $totalIn += $amount;
             }
 
@@ -111,15 +109,15 @@ class LaporanArusKas extends Page
             foreach ($expenses as $e) {
                 $amount = $e->amount_expense;
                 $name = $e->category->name_category ?? 'Pengeluaran Lainnya';
-                $rows->push(['keterangan' => $name, 'jumlah' => -$amount]);
+                $rows->push(['keterangan' => $name, 'jumlah' => $amount, 'type' => 'out']);
                 $totalOut += $amount;
             }
 
             if ($rows->isNotEmpty()) {
                 $netCashFlow = $totalIn - $totalOut;
 
-                $rows->push(['keterangan' => '', 'jumlah' => '']);
-                $rows->push(['keterangan' => 'Arus kas neto dari ' . ucfirst($activity), 'jumlah' => $netCashFlow]);
+                $rows->push(['keterangan' => '', 'jumlah' => '', 'type' => '']);
+                $rows->push(['keterangan' => 'Arus kas neto dari ' . ucfirst($activity), 'jumlah' => abs($netCashFlow), 'type' => 'neto']);
 
                 $result->push([
                     'activity' => ucfirst($activity),
@@ -132,7 +130,18 @@ class LaporanArusKas extends Page
             }
         }
 
-        $this->kasAkhir = $kasAwal + ($grandTotalIn - $grandTotalOut);
+        $netKas = $grandTotalIn - $grandTotalOut;
+        $this->kasAkhir = $kasAwal + $netKas;
+
+        $result->push([
+            'activity' => 'Kenaikan (penurunan) bersih kas',
+            'accounts' => collect([
+                ['keterangan' => 'Kenaikan (penurunan) bersih kas', 'jumlah' => abs($netKas), 'type' => 'neto'],
+                ['keterangan' => '', 'jumlah' => '', 'type' => ''],
+                ['keterangan' => 'Saldo akhir kas', 'jumlah' => abs($this->kasAkhir), 'type' => 'neto']
+            ]),
+            'total' => $this->kasAkhir
+        ]);
 
         return $result;
     }
@@ -143,10 +152,8 @@ class LaporanArusKas extends Page
             'records' => $this->records,
             'month' => $this->month,
             'kasAkhir' => $this->kasAkhir,
-            'kasAwal' => $this->kasAwal, // tambahkan ini
         ];
     }
-
 
     public static function canAccess(): bool
     {
