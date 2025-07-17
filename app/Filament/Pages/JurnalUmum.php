@@ -128,8 +128,7 @@ class JurnalUmum extends Page
     ->whereYear('date', $bulan->year)
     ->get()
     ->map(function ($item) use ($akunKas, $akunPersediaan) {
-        $total = $item->purchaseItems->sum('price');
-
+        $total = $item->purchaseItems->sum(fn($purchaseItems) => $purchaseItems->quantity * $purchaseItems->price);
         return [
             'date' => $item->date,
             'code' => $item->code,
@@ -142,14 +141,12 @@ class JurnalUmum extends Page
 
 
     // ORDER (penjualan)
-    $orders = Order::whereMonth('created_at', $bulan->month)
+    $orders = Order::with('orderItem') // <--- tambahkan ini!
+    ->whereMonth('created_at', $bulan->month)
     ->whereYear('created_at', $bulan->year)
     ->get()
     ->map(function ($item) use ($akunKas, $akunPendapatan) {
-        $total = $item->orderItem->sum(function ($orderItem) {
-            return $orderItem->price * $orderItem->qty;
-        });
-
+        $total = $item->orderItem->sum(fn($orderItem) => $orderItem->quantity * $orderItem->price);
         return [
             'date' => $item->created_at,
             'code' => $item->code,
