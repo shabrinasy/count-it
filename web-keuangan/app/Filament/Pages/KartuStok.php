@@ -25,18 +25,12 @@ class KartuStok extends Page
         $this->supplyList = Supplies::pluck('name', 'id')->toArray();
         $this->selectedSupply = null;
         $this->selectedMonth = null;
-
-        // Ambil unit dari bahan baku yang dipilih
-        if ($this->selectedSupply) {
-            $this->unit = Supplies::find($this->selectedSupply)?->unit;
-        }
     }
-
 
     public function reloadData(): void
     {
         if (!$this->selectedSupply || !$this->selectedMonth) {
-            $this->results = []; // kosongkan data jika filter belum lengkap
+            $this->results = [];
             return;
         }
 
@@ -46,10 +40,6 @@ class KartuStok extends Page
     public function updatedSelectedSupply(): void
     {
         $this->reloadData();
-        // Ambil unit ketika selectedSupply diperbarui
-        if ($this->selectedSupply) {
-            $this->unit = Supplies::find($this->selectedSupply)?->unit;
-        }
     }
 
     public function updatedSelectedMonth(): void
@@ -57,156 +47,144 @@ class KartuStok extends Page
         $this->reloadData();
     }
 
-
     private function generateKartuStok($suppliesId, $bulan): array
-{
-    $fifo = collect();
-    $log = [];
+    {
+        $log = [];
+        $fifo = collect();
 
-    // Mengambil tanggal awal dan akhir bulan
-    $tanggalAwal = \Carbon\Carbon::parse($bulan)->startOfMonth();
-    $tanggalAkhir = \Carbon\Carbon::parse($bulan)->endOfMonth();
+        $tanggalAwal = Carbon::parse($bulan)->startOfMonth();
+        $tanggalAkhir = Carbon::parse($bulan)->endOfMonth();
 
-    // Mengambil saldo dari bulan sebelumnya (termasuk qty, harga_unit, dan jumlah)
-    $previousMonth = \Carbon\Carbon::parse($bulan)->subMonth()->endOfMonth(); // Akhir bulan sebelumnya
-    $previousMonthSaldo = DB::table('purchase_items')
-        ->join('purchases', 'purchases.id', '=', 'purchase_items.purchases_id')
-        ->where('purchase_items.supplies_id', $suppliesId)
-        ->where('purchases.date', '<=', $previousMonth)
-        ->select(
-            DB::raw('SUM(purchase_items.quantity * purchase_items.actual_weight) as qty'),
-            DB::raw('SUM(purchase_items.price) as total_price')
-        )
-        ->first();
+        // Saldo awal
+        $saldoAwal = DB::table('purchase_items')
+            ->join('purchases', 'purchases.id', '=', 'purchase_items.purchases_id')
+            ->where('purchase_items.supplies_id', $suppliesId)
+            ->where('purchases.date', '<', $tanggalAwal)
+            ->orderBy('purchases.date')
+            ->get();
 
-    // Mengatur saldo awal berdasarkan saldo bulan sebelumnya
-    $saldoAwalQty = $previousMonthSaldo->qty ?? 0;
-    $saldoAwalTotalPrice = $previousMonthSaldo->total_price ?? 0;
-
-    // Menghitung harga per unit dari saldo awal
-    $saldoAwalHargaUnit = $saldoAwalQty > 0 ? $saldoAwalTotalPrice / $saldoAwalQty : 0;
-
-    // Menambahkan saldo awal ke dalam FIFO
-    $fifo->push([
-        'qty' => $saldoAwalQty,
-        'harga_unit' => $saldoAwalHargaUnit,
-    ]);
-
-    // Menambahkan log untuk saldo awal
-    $log[] = [
-        'tanggal' => \Carbon\Carbon::parse($previousMonth)->toDateString(),
-        'pembelian' => null,
-        'pemakaian' => null,
-        'saldo' => [
-            'qty' => $saldoAwalQty,
-            'harga_unit' => $saldoAwalHargaUnit,
-            'jumlah' => $saldoAwalTotalPrice,
-        ],
-    ];
-
-    // Pembelian
-    $pembelian = DB::table('purchase_items')
-        ->join('purchases', 'purchases.id', '=', 'purchase_items.purchases_id')
-        ->where('purchase_items.supplies_id', $suppliesId)
-        ->whereBetween('purchases.date', [$tanggalAwal, $tanggalAkhir])
-        ->select(
-            'purchases.date',
-            'purchase_items.quantity',
-            'purchase_items.actual_weight',
-            'purchase_items.price'
-        )
-        ->orderBy('purchases.date')
-        ->get();
-
-    foreach ($pembelian as $item) {
-        $qty = $item->quantity * $item->actual_weight;
-        $hargaUnit = $item->price / $qty;
-        $jumlah = $qty * $hargaUnit;
-
-        $fifo->push([
-            'qty' => $qty,
-            'harga_unit' => $hargaUnit,
-        ]);
-
-        $log[] = [
-            'tanggal' => \Carbon\Carbon::parse($item->date)->toDateString(),
-            'pembelian' => [
-                'qty' => $qty,
-                'harga_unit' => $hargaUnit,
-                'jumlah' => $jumlah,
-            ],
-            'pemakaian' => null,
-            'saldo' => [
-                'qty' => $fifo->sum('qty'),
-                'harga_unit' => $fifo->last()['harga_unit'] ?? 0,
-                'jumlah' => $fifo->sum(fn ($row) => $row['qty'] * $row['harga_unit']),
-            ],
-        ];
-    }
-
-    // Pemakaian (penjualan/order)
-    $pemakaian = DB::table('bill_of_material_items')
-        ->join('bill_of_materials', 'bill_of_material_items.bill_of_materials_id', '=', 'bill_of_materials.id')
-        ->join('order_items', 'order_items.menus_id', '=', 'bill_of_materials.menus_id')
-        ->join('orders', 'orders.id', '=', 'order_items.orders_id')
-        ->where('bill_of_material_items.supplies_id', $suppliesId)
-        ->whereBetween('orders.created_at', [$tanggalAwal, $tanggalAkhir])
-        ->select(
-            'orders.created_at',
-            'bill_of_material_items.quantity',
-            'order_items.quantity as order_qty'
-        )
-        ->orderBy('orders.created_at')
-        ->get();
-
-    foreach ($pemakaian as $pakai) {
-        $totalQty = $pakai->quantity * $pakai->order_qty;
-        $qtyLeft = $totalQty;
-        $totalJumlah = 0;
-        $hargaUnitTerpakai = null;
-
-        while ($qtyLeft > 0 && $fifo->isNotEmpty()) {
-            $batch = $fifo->first();
-            $ambil = min($batch['qty'], $qtyLeft);
-            $totalJumlah += $ambil * $batch['harga_unit'];
-            $hargaUnitTerpakai = $batch['harga_unit'];
-            $qtyLeft -= $ambil;
-
-            if ($ambil >= $batch['qty']) {
-                $fifo->shift();
-            } else {
-                $updated = $batch;
-                $updated['qty'] -= $ambil;
-                $fifo = $fifo->slice(1)->prepend($updated);
-            }
+        foreach ($saldoAwal as $item) {
+            $qty = $item->quantity;
+            $hargaUnit = $item->price / $qty;
+            $fifo->push(['qty' => $qty, 'harga_unit' => $hargaUnit]);
         }
 
         $log[] = [
-            'tanggal' => \Carbon\Carbon::parse($pakai->created_at)->toDateString(),
+            'tanggal' => $tanggalAwal->toDateString(),
+            'keterangan' => 'Saldo Awal',
             'pembelian' => null,
-            'pemakaian' => [
-                'qty' => $totalQty,
-                'harga_unit' => $hargaUnitTerpakai,
-                'jumlah' => $totalJumlah,
-            ],
-            'saldo' => [
-                'qty' => $fifo->sum('qty'),
-                'harga_unit' => $fifo->last()['harga_unit'] ?? 0,
-                'jumlah' => $fifo->sum(fn ($row) => $row['qty'] * $row['harga_unit']),
-            ],
+            'hpp' => null,
+            'batches' => $fifo->map(function ($batch) {
+                return [
+                    'qty' => $batch['qty'],
+                    'harga_unit' => $batch['harga_unit'],
+                    'total' => $batch['qty'] * $batch['harga_unit']
+                ];
+            })->toArray(),
         ];
+
+        // Ambil transaksi pembelian & pemakaian
+        $pembelian = DB::table('purchase_items')
+            ->join('purchases', 'purchases.id', '=', 'purchase_items.purchases_id')
+            ->where('purchase_items.supplies_id', $suppliesId)
+            ->whereBetween('purchases.date', [$tanggalAwal, $tanggalAkhir])
+            ->select('purchases.date as tanggal', 'purchase_items.quantity', 'purchase_items.price as harga_unit')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'tanggal' => $item->tanggal,
+                    'keterangan' => 'Pembelian',
+                    'qty' => $item->quantity,
+                    'harga_unit' => $item->harga_unit,
+                    'type' => 'masuk',
+                ];
+            });
+
+        $pemakaian = DB::table('bill_of_material_items')
+            ->join('bill_of_materials', 'bill_of_material_items.bill_of_materials_id', '=', 'bill_of_materials.id')
+            ->join('order_items', 'order_items.menus_id', '=', 'bill_of_materials.menus_id')
+            ->join('orders', 'orders.id', '=', 'order_items.orders_id')
+            ->where('bill_of_material_items.supplies_id', $suppliesId)
+            ->whereBetween('orders.created_at', [$tanggalAwal, $tanggalAkhir])
+            ->select('orders.created_at as tanggal', 'order_items.quantity')
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'tanggal' => $item->tanggal,
+                    'keterangan' => 'Pemakaian',
+                    'qty' => $item->quantity,
+                    'type' => 'keluar',
+                ];
+            });
+
+        $transactions = $pembelian->concat($pemakaian)->sortBy('tanggal');
+
+        foreach ($transactions as $trx) {
+            $row = [
+                'tanggal' => Carbon::parse($trx['tanggal'])->toDateString(),
+                'keterangan' => $trx['keterangan'],
+                'pembelian' => null,
+                'hpp' => null,
+            ];
+
+            if ($trx['type'] === 'masuk') {
+                $fifo->push(['qty' => $trx['qty'], 'harga_unit' => $trx['harga_unit']]);
+
+                $row['pembelian'] = [
+                    'qty' => $trx['qty'],
+                    'harga_unit' => $trx['harga_unit'],
+                    'total' => $trx['qty'] * $trx['harga_unit'],
+                ];
+            } elseif ($trx['type'] === 'keluar') {
+                $qtyOut = $trx['qty'];
+                $totalKeluar = 0;
+                $hppLayers = [];
+
+                while ($qtyOut > 0 && $fifo->isNotEmpty()) {
+                    $batch = $fifo->first();
+                    $ambil = min($batch['qty'], $qtyOut);
+
+                    $hppLayers[] = [
+                        'qty' => $ambil,
+                        'harga_unit' => $batch['harga_unit'],
+                        'total' => $ambil * $batch['harga_unit']
+                    ];
+
+                    $totalKeluar += $ambil * $batch['harga_unit'];
+                    $qtyOut -= $ambil;
+
+                    if ($ambil == $batch['qty']) {
+                        $fifo->shift();
+                    } else {
+                        $batch['qty'] -= $ambil;
+                        $fifo[0] = $batch;
+                    }
+                }
+
+                $row['hpp'] = [
+                    'qty' => $trx['qty'],
+                    'harga_unit' => count($hppLayers) ? $hppLayers[0]['harga_unit'] : null,
+                    'total' => $totalKeluar,
+                    'detail' => $hppLayers,
+                ];
+            }
+
+            $row['batches'] = $fifo->map(function ($batch) {
+                return [
+                    'qty' => $batch['qty'],
+                    'harga_unit' => $batch['harga_unit'],
+                    'total' => $batch['qty'] * $batch['harga_unit']
+                ];
+            })->toArray();
+
+            $log[] = $row;
+        }
+
+        return $log;
     }
 
-    return $log;
-}
-
-
-
-
-public static function canAccess(): bool
-{
-    return in_array(auth()->user()?->role, ['pemilik', 'keuangan']);
-}
-
-
+    public static function canAccess(): bool
+    {
+        return in_array(auth()->user()?->role, ['pemilik', 'keuangan']);
+    }
 }
