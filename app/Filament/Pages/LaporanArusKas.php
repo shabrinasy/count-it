@@ -143,8 +143,10 @@ class LaporanArusKas extends Page
             'records' => $this->records,
             'month' => $this->month,
             'kasAkhir' => $this->kasAkhir,
+            'kasAwal' => $this->kasAwal, // tambahkan ini
         ];
     }
+
 
     public static function canAccess(): bool
     {
