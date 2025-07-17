@@ -33,11 +33,11 @@ class LaporanArusKas extends Page
     $startOfMonth = $selectedMonth->copy()->startOfMonth();
     $endOfMonth = $selectedMonth->copy()->endOfMonth();
 
-    $orders = Order::with('orderItems')
+    $orders = Order::with('orderItem')
         ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
         ->get()
         ->map(function ($order) {
-            $items = $order->orderItems ?? collect([]);
+            $items = $order->orderItem ?? collect([]);
             return [
                 'tanggal' => Carbon::parse($order->created_at)->format('Y-m-d'),
                 'keterangan' => 'Penjualan: ' . $order->customer_name,
