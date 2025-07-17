@@ -55,7 +55,6 @@
                             <th rowspan="2" class="px-3 py-2 border">Tanggal</th>
                             <th rowspan="2" class="px-3 py-2 border">Keterangan</th>
                             <th rowspan="2" class="px-3 py-2 border">Ref</th>
-                            <th rowspan="2" class="px-3 py-2 border">Kode Akun</th>
                             <th rowspan="2" class="px-3 py-2 border">Debit</th>
                             <th rowspan="2" class="px-3 py-2 border">Kredit</th>
                             <th colspan="2" class="px-3 py-2 border">Saldo</th>
@@ -75,7 +74,6 @@
                                 <td class="border px-3 py-2">{{ \Carbon\Carbon::parse($entry['tanggal'])->format('d/m/Y') }}</td>
                                 <td class="border px-3 py-2 text-left">{{ $entry['keterangan'] }}</td>
                                 <td class="border px-3 py-2">{{ $entry['nomor'] }}</td>
-                                <td class="border px-3 py-2">{{ $entry['kode_akun'] }}</td>
                                 <td class="border px-3 py-2 text-right text-gray-800">
                                     {{ $entry['debit'] > 0 ? 'Rp ' . number_format($entry['debit'], 0, ',', '.') : '' }}
                                 </td>
