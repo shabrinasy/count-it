@@ -23,61 +23,43 @@
                     <tbody>
                         @foreach ($records as $section)
                             <tr>
-                                <td colspan="3" class="text-left font-semibold px-3 py-2 bg-gray-100">
-                                    {{ $section['activity'] }}
-                                </td>
+                                <td colspan="4" class="font-semibold bg-pink-100 text-left p-2">{{ $section['activity'] }}</td>
                             </tr>
 
-                            <!-- Pemasukan Section -->
                             <tr>
-                                <td colspan="3" class="font-semibold px-3 py-2 text-left bg-gray-100">
-                                    Pemasukan:
-                                </td>
+                                <td colspan="2" class="font-semibold p-2">Pemasukan:</td>
                             </tr>
                             @foreach ($section['accounts'] as $row)
-                                @if($row['pemasukan'] > 0) 
+                                @if ($row['pemasukan'] !== 0)
                                     <tr>
                                         <td class="px-3 py-2">{{ $row['keterangan'] }}</td>
-                                        <td class="text-right px-3 py-2">
-                                            Rp {{ number_format($row['pemasukan'], 0, ',', '.') }}
-                                        </td>
-                                        <td class="text-right px-3 py-2"></td> <!-- Saldo kosong di pengeluaran -->
+                                        <td class="px-3 py-2 text-right">Rp {{ number_format($row['pemasukan'], 0, ',', '.') }}</td>
                                     </tr>
                                 @endif
                             @endforeach
 
-                            <!-- Pengeluaran Section -->
                             <tr>
-                                <td colspan="3" class="font-semibold px-3 py-2 text-left bg-gray-100">
-                                    Pengeluaran:
-                                </td>
+                                <td colspan="2" class="font-semibold p-2">Pengeluaran:</td>
                             </tr>
                             @foreach ($section['accounts'] as $row)
-                                @if($row['pengeluaran'] > 0) 
+                                @if ($row['pengeluaran'] !== 0)
                                     <tr>
                                         <td class="px-3 py-2">{{ $row['keterangan'] }}</td>
-                                        <td class="text-right px-3 py-2"></td> <!-- Saldo kosong di pemasukan -->
-                                        <td class="text-right px-3 py-2">
-                                            (Rp {{ number_format($row['pengeluaran'], 0, ',', '.') }})
-                                        </td>
+                                        <td class="px-3 py-2 text-right">(Rp {{ number_format($row['pengeluaran'], 0, ',', '.') }})</td>
                                     </tr>
                                 @endif
                             @endforeach
 
-                            <!-- Arus Kas Neto Section -->
                             <tr>
-                                <td class="font-semibold px-3 py-2">Arus Kas Neto</td>
-                                <td class="text-right font-semibold px-3 py-2">
-                                    Rp {{ number_format($section['total'], 0, ',', '.') }}
-                                </td>
-                                <td class="text-right px-3 py-2"></td> <!-- Saldo ada di kolom kanan -->
+                                <td colspan="2" class="font-semibold p-2">Arus Kas Neto:</td>
+                                <td colspan="2" class="font-semibold text-right">Rp {{ number_format($section['total'], 0, ',', '.') }}</td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
 
                 <div class="text-right font-semibold text-base px-3 py-2">
-                    Kenaikan neto dalam kas dan saldo kas {{ $tanggalAkhir }}: {{ 'Rp ' . number_format($kasAkhir, 0, ',', '.') }}
+                    Kenaikan neto dalam kas dan saldo kas {{ $tanggalAkhir }}: Rp {{ number_format($kasAkhir, 0, ',', '.') }}
                 </div>
             @else
                 <div class="text-center italic text-gray-500 py-6">
