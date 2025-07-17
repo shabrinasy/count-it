@@ -243,10 +243,12 @@ class BukuBesar extends Page
 
             if ($account->balance === 'debit') {
                 $saldoDebit += $debit - $credit;
-                $saldoKredit = 0;
+                $saldoDebit = max($saldoDebit, 0);
+                $saldoKredit = '';
             } else {
                 $saldoKredit += $credit - $debit;
-                $saldoDebit = 0;
+                $saldoKredit = max($saldoKredit, 0);
+                $saldoDebit = '';
             }
 
             return [
