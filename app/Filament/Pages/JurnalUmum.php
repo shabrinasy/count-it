@@ -143,7 +143,7 @@ class JurnalUmum extends Page
     // ORDER (penjualan)
     // Ambil akun HPP dan Persediaan
 $akunHPP = $this->getAccount('Harga Pokok Penjualan');
-$akunPersediaanBarangDagang = $this->getAccount('Persediaan Barang Dagang');
+$akunPersediaanBarangDagang = $this->getAccount('Persediaan Bahan Baku');
 
 // ORDER (penjualan)
 $orders = Order::with('orderItem')
