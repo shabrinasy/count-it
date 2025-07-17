@@ -31,10 +31,11 @@
                             </tr>
                             @foreach ($section['accounts'] as $row)
                                 @if ($row['pemasukan'] !== 0)
-                                    <tr>
+                                   <tr>
                                         <td class="px-3 py-2">{{ $row['keterangan'] }}</td>
-                                        <td class="px-3 py-2 text-right">Rp {{ number_format($row['pemasukan'], 0, ',', '.') }}</td>
+                                        <td class="px-3 py-2 text-right">Rp {{ number_format((float) $row['pemasukan'], 0, ',', '.') }}</td>
                                     </tr>
+
                                 @endif
                             @endforeach
 
@@ -45,7 +46,7 @@
                                 @if ($row['pengeluaran'] !== 0)
                                     <tr>
                                         <td class="px-3 py-2">{{ $row['keterangan'] }}</td>
-                                        <td class="px-3 py-2 text-right">(Rp {{ number_format($row['pengeluaran'], 0, ',', '.') }})</td>
+                                        <td class="px-3 py-2 text-right">(Rp {{ number_format((float) $row['pengeluaran'], 0, ',', '.') }})</td>
                                     </tr>
                                 @endif
                             @endforeach
