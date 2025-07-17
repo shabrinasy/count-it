@@ -87,11 +87,11 @@ class LaporanArusKas extends Page
 
     // Kas awal dihitung dari transaksi sebelum bulan terpilih
 
-$totalOrderSebelumnya = Order::with('orderItems')
+$totalOrderSebelumnya = Order::with('orderItem')
     ->where('created_at', '<', $startOfMonth)
     ->get()
     ->sum(function ($order) {
-        return $order->orderItems->sum(fn($item) => $item->quantity * $item->price);
+        return $order->orderItem->sum(fn($item) => $item->quantity * $item->price);
     });
 
 $totalPurchaseSebelumnya = Purchase::with('purchaseItems')
