@@ -30,7 +30,9 @@
 
                             <!-- Pemasukan Section -->
                             <tr>
-                                <td colspan="3" class="font-semibold px-3 py-2">Pemasukan</td>
+                                <td class="font-semibold px-3 py-2">Pemasukan</td>
+                                <td class="font-semibold px-3 py-2">Jumlah</td>
+                                <td class="font-semibold px-3 py-2">Saldo</td>
                             </tr>
                             @foreach ($section['accounts'] as $row)
                                 @if($row['pemasukan'] > 0)
@@ -46,7 +48,9 @@
 
                             <!-- Pengeluaran Section -->
                             <tr>
-                                <td colspan="3" class="font-semibold px-3 py-2">Pengeluaran</td>
+                                <td class="font-semibold px-3 py-2">Pengeluaran</td>
+                                <td class="font-semibold px-3 py-2">Jumlah</td>
+                                <td class="font-semibold px-3 py-2">Saldo</td>
                             </tr>
                             @foreach ($section['accounts'] as $row)
                                 @if($row['pengeluaran'] > 0)
@@ -62,10 +66,11 @@
 
                             <!-- Arus Kas Neto Section -->
                             <tr>
-                                <td colspan="2" class="font-semibold px-3 py-2">Arus Kas Neto</td>
+                                <td class="font-semibold px-3 py-2">Arus Kas Neto</td>
                                 <td class="text-right font-semibold px-3 py-2">
                                     Rp {{ number_format($section['total'], 0, ',', '.') }}
                                 </td>
+                                <td class="px-3 py-2"></td>
                             </tr>
                         @endforeach
                     </tbody>
