@@ -69,11 +69,11 @@ class LaporanArusKas extends Page
                 ];
             });
 
-        $expenses = Expense::whereBetween('date', [$startOfMonth, $endOfMonth])
+        $expenses = Expense::whereBetween('date_expense', [$startOfMonth, $endOfMonth])
             ->get()
             ->map(function ($expense) {
                 return [
-                    'tanggal' => $expense->date,
+                    'tanggal' => $expense->date_expense,
                     'keterangan' => $expense->category->name ?? 'Pengeluaran Lainnya',
                     'jumlah' => $expense->amount,
                     'is_expense' => true,
@@ -83,9 +83,9 @@ class LaporanArusKas extends Page
 
         // Kas awal dihitung dari transaksi sebelum bulan terpilih
         $totalPemasukanSebelumnya = Order::where('created_at', '<', $startOfMonth)->sum('total')
-            + Income::where('date', '<', $startOfMonth)->sum('amount');
+            + Income::where('date_income', '<', $startOfMonth)->sum('amount');
         $totalPengeluaranSebelumnya = Purchase::where('date', '<', $startOfMonth)->sum('total')
-            + Expense::where('date', '<', $startOfMonth)->sum('amount');
+            + Expense::where('date_expense', '<', $startOfMonth)->sum('amount');
 
         $this->kasAwal = $totalPemasukanSebelumnya - $totalPengeluaranSebelumnya;
 
