@@ -141,12 +141,51 @@ class JurnalUmum extends Page
     });
 
 
-    // ORDER (penjualan)
-    $orders = Order::whereMonth('created_at', $bulan->month)
+// ORDER (penjualan)
+$orders = Order::with(['orderItem.menu.billOfMaterials.items.supplies']) // pastikan relasi lengkap
+    ->whereMonth('created_at', $bulan->month)
     ->whereYear('created_at', $bulan->year)
     ->get()
-    ->map(function ($item) use ($akunKas, $akunPendapatan) {
+    ->map(function ($item) use ($akunKas, $akunPendapatan, $akunPersediaan) {
         $total = $item->orderItem->sum('price');
+        $hppTotal = 0;
+
+        foreach ($item->orderItem as $orderItem) {
+            $menu = $orderItem->menu;
+            if (!$menu || !$menu->billOfMaterials) continue;
+
+            foreach ($menu->billOfMaterials->items as $bomItem) {
+                $supply = $bomItem->supplies;
+                if (!$supply) continue;
+
+                // Total qty dipakai = per item BOM x jumlah pesanan
+                $totalQty = $bomItem->quantity * $orderItem->quantity;
+
+                // === LOGIKA FIFO DARI KARTU STOK ===
+                // Ambil data pembelian untuk bahan baku ini
+                $stokMasuk = \DB::table('purchase_items')
+                    ->join('purchases', 'purchase_items.purchases_id', '=', 'purchases.id')
+                    ->where('purchase_items.supplies_id', $supply->id)
+                    ->where('purchases.date', '<=', $item->created_at)
+                    ->orderBy('purchases.date')
+                    ->select(
+                        'purchase_items.quantity',
+                        'purchase_items.actual_weight',
+                        'purchase_items.price'
+                    )->get();
+
+                $qtyLeft = $totalQty;
+                foreach ($stokMasuk as $stok) {
+                    $availableQty = $stok->quantity * $stok->actual_weight;
+                    $hargaUnit = $stok->price / max($availableQty, 1);
+                    $ambil = min($qtyLeft, $availableQty);
+                    $hppTotal += $ambil * $hargaUnit;
+                    $qtyLeft -= $ambil;
+
+                    if ($qtyLeft <= 0) break;
+                }
+            }
+        }
 
         return [
             'date' => $item->created_at,
@@ -154,9 +193,12 @@ class JurnalUmum extends Page
             'entries' => [
                 ['account' => ['code' => $akunKas->code_account, 'name' => $akunKas->name_account], 'debit' => $total, 'credit' => 0],
                 ['account' => ['code' => $akunPendapatan->code_account, 'name' => $akunPendapatan->name_account], 'debit' => 0, 'credit' => $total],
+                ['account' => ['code' => '511', 'name' => 'Harga Pokok Penjualan'], 'debit' => $hppTotal, 'credit' => 0],
+                ['account' => ['code' => $akunPersediaan->code_account, 'name' => $akunPersediaan->name_account], 'debit' => 0, 'credit' => $hppTotal],
             ],
         ];
     });
+
 
 
     // Gabungkan semua data
