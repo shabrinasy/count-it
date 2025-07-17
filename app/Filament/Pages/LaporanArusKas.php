@@ -183,7 +183,6 @@ class LaporanArusKas extends Page
             $netCashFlow = $totalIn - $totalOut;
 
             $rows->push([
-                'keterangan' => 'Arus kas neto dari ' . ucfirst($activity) . ' Activity',
                 'pemasukan' => '',
                 'pengeluaran' => '',
                 'saldo' => $netCashFlow,
