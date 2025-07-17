@@ -29,8 +29,6 @@ class LaporanArusKas extends Page
 
     public function getRecordsProperty()
     {
-        $this->kasAwal = $kasAwal;
-
         if (!$this->month) return collect();
 
         $start = Carbon::parse($this->month . '-01')->startOfMonth();
@@ -42,7 +40,7 @@ class LaporanArusKas extends Page
         $grandTotalIn = 0;
         $grandTotalOut = 0;
 
-        $kasAwal = 0;
+        $this->kasAwal = 0;
 
         $kasAwal += Order::with('orderItem')
             ->where('created_at', '<', $start)
