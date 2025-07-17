@@ -23,30 +23,57 @@
                     <tbody>
                         @foreach ($records as $section)
                             <tr>
-                                <td colspan="4" class="font-semibold px-3 py-2 bg-gray-100">
+                                <td colspan="3" class="text-left font-semibold px-3 py-2 bg-gray-100">
                                     {{ $section['activity'] }}
                                 </td>
                             </tr>
-                            <tr class="bg-white text-left font-semibold">
-                                <th class="border px-3 py-2">Keterangan</th>
-                                <th class="border px-3 py-2 text-right">Pemasukan</th>
-                                <th class="border px-3 py-2 text-right">Pengeluaran</th>
-                                <th class="border px-3 py-2 text-right">Saldo</th>
+
+                            <!-- Pemasukan Section -->
+                            <tr>
+                                <td class="font-semibold px-3 py-2">Pemasukan</td>
+                                <td class="px-3 py-2">
+                                    @foreach ($section['accounts'] as $row)
+                                        @if($row['pemasukan'] > 0)
+                                            <div>{{ $row['keterangan'] }}</div>
+                                        @endif
+                                    @endforeach
+                                </td>
+                                <td class="text-right px-3 py-2">
+                                    @foreach ($section['accounts'] as $row)
+                                        @if($row['pemasukan'] > 0)
+                                            Rp {{ number_format($row['pemasukan'], 0, ',', '.') }}
+                                        @endif
+                                    @endforeach
+                                </td>
                             </tr>
-                            @foreach ($section['accounts'] as $row)
-                                <tr>
-                                    <td class="border px-3 py-2">{{ $row['keterangan'] }}</td>
-                                    <td class="border px-3 py-2 text-right">
-                                        {{ $row['pemasukan'] !== '' ? 'Rp ' . number_format($row['pemasukan'], 0, ',', '.') : '' }}
-                                    </td>
-                                    <td class="border px-3 py-2 text-right">
-                                        {{ $row['pengeluaran'] !== '' ? 'Rp ' . number_format($row['pengeluaran'], 0, ',', '.') : '' }}
-                                    </td>
-                                    <td class="border px-3 py-2 text-right font-semibold">
-                                        {{ array_key_exists('saldo', $row) ? 'Rp ' . number_format($row['saldo'], 0, ',', '.') : '' }}
-                                    </td>
-                                </tr>
-                            @endforeach
+
+                            <!-- Pengeluaran Section -->
+                            <tr>
+                                <td class="font-semibold px-3 py-2">Pengeluaran</td>
+                                <td class="px-3 py-2">
+                                    @foreach ($section['accounts'] as $row)
+                                        @if($row['pengeluaran'] > 0)
+                                            <div>{{ $row['keterangan'] }}</div>
+                                        @endif
+                                    @endforeach
+                                </td>
+                                <td class="text-right px-3 py-2">
+                                    @foreach ($section['accounts'] as $row)
+                                        @if($row['pengeluaran'] > 0)
+                                            Rp {{ number_format($row['pengeluaran'], 0, ',', '.') }}
+                                        @endif
+                                    @endforeach
+                                </td>
+                            </tr>
+
+                            <!-- Saldo Section -->
+                            <tr>
+                                <td class="font-semibold px-3 py-2">Arus Kas Neto</td>
+                                <td class="px-3 py-2"></td>
+                                <td class="text-right font-semibold px-3 py-2">
+                                    Rp {{ number_format($section['total'], 0, ',', '.') }}
+                                </td>
+                            </tr>
                         @endforeach
                     </tbody>
                 </table>
