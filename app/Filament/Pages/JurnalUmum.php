@@ -52,7 +52,7 @@ class JurnalUmum extends Page
     $data = collect();
 
     $akunKas = $this->getAccount('Kas');
-    $akunPersediaan = $this->getAccount('Persediaan Bahan Baku');
+    $akunPersediaan = $this->getAccount('Persediaan Barang Dagang');
     $akunPendapatan = $this->getAccount('Penjualan');
     $akunHPP = $this->getAccount('Harga Pokok Penjualan');
 
