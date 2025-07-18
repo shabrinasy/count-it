@@ -60,19 +60,19 @@ class KartuStok extends Page
             ->join('purchases', 'purchases.id', '=', 'purchase_items.purchases_id')
             ->where('purchase_items.supplies_id', $suppliesId)
             ->where('purchases.date', '<', $tanggalAwal)
-            ->select('purchase_items.quantity', 'purchase_items.price')
+            ->select('purchase_items.quantity', 'purchase_items.actual_weight', 'purchase_items.price')
             ->get();
 
         $totalSaldo = collect();
 
         foreach ($saldoAwal as $item) {
-            $qty = $item->quantity;
-            $hargaUnit = $qty > 0 ? ($item->price / $qty) : 0;
-            $fifo->push(['qty' => $qty, 'harga_unit' => $hargaUnit]);
+            $totalQty = $item->quantity * $item->actual_weight;
+            $hargaUnit = $totalQty > 0 ? ($item->price / $totalQty) : 0;
+            $fifo->push(['qty' => $totalQty, 'harga_unit' => $hargaUnit]);
             $totalSaldo->push([
-                'qty' => $qty,
+                'qty' => $totalQty,
                 'harga_unit' => $hargaUnit,
-                'total' => $qty * $hargaUnit,
+                'total' => $totalQty * $hargaUnit,
             ]);
         }
 
@@ -91,14 +91,16 @@ class KartuStok extends Page
             ->join('purchases', 'purchases.id', '=', 'purchase_items.purchases_id')
             ->where('purchase_items.supplies_id', $suppliesId)
             ->whereBetween('purchases.date', [$tanggalAwal, $tanggalAkhir])
-            ->select('purchases.date as tanggal', 'purchase_items.quantity', 'purchase_items.price as harga_unit')
+            ->select('purchases.date as tanggal', 'purchase_items.quantity', 'purchase_items.actual_weight', 'purchase_items.price')
             ->get()
             ->map(function ($item) {
+                $totalQty = $item->quantity * $item->actual_weight;
+                $hargaUnit = $totalQty > 0 ? ($item->price / $totalQty) : 0;
                 return [
                     'tanggal' => $item->tanggal,
                     'keterangan' => 'Pembelian',
-                    'qty' => $item->quantity,
-                    'harga_unit' => $item->harga_unit,
+                    'qty' => $totalQty,
+                    'harga_unit' => $hargaUnit,
                     'type' => 'masuk',
                 ];
             });
@@ -109,13 +111,13 @@ class KartuStok extends Page
             ->join('orders', 'orders.id', '=', 'order_items.orders_id')
             ->where('bill_of_material_items.supplies_id', $suppliesId)
             ->whereBetween('orders.created_at', [$tanggalAwal, $tanggalAkhir])
-            ->select('orders.created_at as tanggal', 'order_items.quantity')
+            ->select('orders.created_at as tanggal', 'bill_of_material_items.quantity as qty_per_menu', 'order_items.quantity as order_qty')
             ->get()
             ->map(function ($item) {
                 return [
                     'tanggal' => $item->tanggal,
                     'keterangan' => 'Pemakaian',
-                    'qty' => $item->quantity,
+                    'qty' => $item->qty_per_menu * $item->order_qty,
                     'type' => 'keluar',
                 ];
             });
@@ -182,6 +184,11 @@ class KartuStok extends Page
 
             $log[] = $row;
         }
+
+        // Sinkronkan supplies.stock dengan jumlah akhir FIFO
+        Supplies::where('id', $suppliesId)->update([
+            'stock' => $fifo->sum('qty'),
+        ]);
 
         return $log;
     }
