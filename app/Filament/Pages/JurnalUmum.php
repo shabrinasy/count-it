@@ -139,35 +139,47 @@ $orders = Order::with('orderItem.menu.billOfMaterial.billOfMaterialItems')
     ->whereYear('created_at', $bulan->year)
     ->get()
     ->flatMap(function ($item) use ($akunKas, $akunPendapatan, $akunHPP, $akunPersediaan) {
-        $totalPendapatan = $item->orderItem->sum(fn($oi) => $oi->quantity * $oi->price);
-        $totalHPP = 0;
+    $totalPendapatan = $item->orderItem->sum(fn($oi) => $oi->quantity * $oi->price);
+    $totalHPP = 0;
 
-        foreach ($item->orderItem as $orderItem) {
-            $menu = $orderItem->menu;
-            if (!$menu || !$menu->billOfMaterial) continue;
+    foreach ($item->orderItem as $orderItem) {
+        $menu = $orderItem->menu;
+        if (!$menu || !$menu->billOfMaterial) continue;
 
-            foreach ($menu->billOfMaterial->billOfMaterialItems as $bomItem) {
-                $jumlahPemakaian = $bomItem->quantity * $orderItem->quantity;
+        foreach ($menu->billOfMaterial->billOfMaterialItems as $bomItem) {
+            $qtyOut = $bomItem->quantity * $orderItem->quantity;
 
-                // Cari lapisan FIFO
-                $purchaseItems = \App\Models\PurchaseItem::where('supplies_id', $bomItem->supplies_id)
-                    ->orderBy('id')
-                    ->get();
+            $purchaseItems = \App\Models\PurchaseItem::where('supplies_id', $bomItem->supplies_id)
+                ->orderBy('id') // FIFO
+                ->get();
 
-                $qtyOut = $jumlahPemakaian;
+            foreach ($purchaseItems as $batch) {
+                $stockReal = $batch->quantity * $batch->actual_weight;
+                if ($stockReal <= 0) continue;
 
-                foreach ($purchaseItems as $batch) {
-                    if ($qtyOut <= 0) break;
+                $hargaPerUnit = $batch->price / $stockReal;
+                $ambil = min($qtyOut, $stockReal);
 
-                    $stockReal = $batch->quantity * $batch->actual_weight;
-                    $hargaPerUnitPemakaian = $stockReal > 0 ? ($batch->price / $stockReal) : 0;
-                    
-                    $ambil = min($qtyOut, $stockReal);
-                    $totalHPP += $ambil * $hargaPerUnitPemakaian;
-                    $qtyOut -= $ambil;
-                }
+                $totalHPP += $ambil * $hargaPerUnit;
+                $qtyOut -= $ambil;
+
+                if ($qtyOut <= 0) break;
             }
         }
+    }
+
+    return [[
+        'date' => $item->created_at,
+        'code' => $item->code,
+        'entries' => [
+            ['account' => ['code' => $akunKas->code_account, 'name' => $akunKas->name_account], 'debit' => $totalPendapatan, 'credit' => 0],
+            ['account' => ['code' => $akunPendapatan->code_account, 'name' => $akunPendapatan->name_account], 'debit' => 0, 'credit' => $totalPendapatan],
+            ['account' => ['code' => $akunHPP->code_account, 'name' => $akunHPP->name_account], 'debit' => $totalHPP, 'credit' => 0],
+            ['account' => ['code' => $akunPersediaan->code_account, 'name' => $akunPersediaan->name_account], 'debit' => 0, 'credit' => $totalHPP],
+        ],
+    ]];
+});
+
 
         return [
             [
