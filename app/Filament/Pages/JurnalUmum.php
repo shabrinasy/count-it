@@ -160,9 +160,10 @@ $orders = Order::with('orderItem.menu.billOfMaterial.billOfMaterialItems')
                     if ($qtyOut <= 0) break;
 
                     $stockReal = $batch->quantity * $batch->actual_weight;
-                    $hargaUnit = $stockReal > 0 ? ($batch->price / $stockReal) : 0;
-                    $ambil = min($batch->quantity, $qtyOut);
-                    $totalHPP += $ambil * $hargaUnit;
+                    $hargaPerUnitPemakaian = $stockReal > 0 ? ($batch->price / $stockReal) : 0;
+                    
+                    $ambil = min($qtyOut, $stockReal);
+                    $totalHPP += $ambil * $hargaPerUnitPemakaian;
                     $qtyOut -= $ambil;
                 }
             }
